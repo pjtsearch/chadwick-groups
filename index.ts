@@ -3,7 +3,24 @@ type Prefs = { wanted: UserId[]; unwanted: UserId[] }
 type Group = UserId[]
 type GroupId = string
 
-const GROUP_SIZE = 6
+const GROUP_SIZE = 4
+
+function shuffle<T>(array: T[]) {
+  let currentIndex = array.length,
+    randomIndex
+
+  // While there remain elements to shuffle...
+  while (currentIndex != 0) {
+    // Pick a remaining element...
+    randomIndex = Math.floor(Math.random() * currentIndex)
+    currentIndex--
+
+    // And swap it with the current element.
+    ;[array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]]
+  }
+
+  return array
+}
 
 const data: Record<UserId, Prefs> = {
   a: { wanted: ["b", "c", "d"], unwanted: ["e"] },
@@ -23,7 +40,7 @@ const data: Record<UserId, Prefs> = {
   o: { wanted: ["k", "o", "m"], unwanted: ["h"] },
   p: { wanted: ["u", "p", "p"], unwanted: ["m"] },
   q: { wanted: ["x", "w", "y"], unwanted: ["l"] },
-  r: { wanted: ["m", "m", "e"], unwanted: ["r"] },
+  r: { wanted: ["m", "m", "e"], unwanted: ["g"] },
   s: { wanted: ["c", "u", "s"], unwanted: ["i"] },
   t: { wanted: ["p", "l", "m"], unwanted: ["g"] },
   u: { wanted: ["n", "d", "v"], unwanted: ["c"] },
@@ -43,19 +60,19 @@ const groupWantsUser = (newUser: UserId, group: Group): Group | undefined =>
       const replaced = [...group.filter((id) => id != member), newUser]
       return {
         replaced,
-        rank: group.reduce((score, member) => score + compareGroupsByPreference(data[member], group, replaced), 0),
+        rank: group.reduce((score, member) => score + compareGroupsByPreference(data[member], replaced, group), 0),
       }
     })
-    .filter(({ rank }) => rank > 0)
+    .filter(({ rank }) => rank < 0)
     .sort(({ rank }, { rank: otherRank }) => rank - otherRank)
     ?.at(0)?.replaced
 
 const compareGroupsByPreference = (prefs: Prefs, group: Group, otherGroup: Group) =>
-  (group.filter(isUnwanted(prefs)).length - otherGroup.filter(isUnwanted(prefs)).length) * 4 +
-  (group.filter(isWanted(prefs)).length > 2 ? -2 : 0) +
-  (otherGroup.filter(isWanted(prefs)).length > 2 ? 2 : 0) +
-  (group.filter(isWanted(prefs)).length > 0 ? 3 : -4) +
-  (otherGroup.filter(isWanted(prefs)).length > 0 ? -4 : 3)
+  (group.filter(isUnwanted(prefs)).length - otherGroup.filter(isUnwanted(prefs)).length) * 2000 +
+  (group.filter(isWanted(prefs)).length > 2 ? 2 : 0) +
+  (otherGroup.filter(isWanted(prefs)).length > 2 ? -2 : 0) +
+  (group.filter(isWanted(prefs)).length > 0 ? -3 : 3) +
+  (otherGroup.filter(isWanted(prefs)).length > 0 ? 3 : -3)
 
 const sortGroupsByPreference = (prefs: Prefs, groups: Record<GroupId, Group>) =>
   Object.entries(groups)
@@ -63,23 +80,34 @@ const sortGroupsByPreference = (prefs: Prefs, groups: Record<GroupId, Group>) =>
     .map(([id, _data]) => id)
 
 const getGroups = (initial: Record<GroupId, Group>, data: Record<UserId, Prefs>) =>
-  Object.entries(data).reduce(
-    (groups, [id, prefs]) =>
-      sortGroupsByPreference(prefs, groups).reduce((groups, groupId) => {
-        if (Object.values(groups).some((group) => group.includes(id))) {
-          return groups
-        } else if (groups[groupId].length < GROUP_SIZE) {
-          return { ...groups, [groupId]: [...groups[groupId], id] }
-        } else if (groupWantsUser(id, groups[groupId])) {
-          return { ...groups, [groupId]: groupWantsUser(id, groups[groupId])! }
-        } else {
-          return groups
-        }
-      }, groups),
-    initial
-  )
+  shuffle(Object.entries(data)).reduce((groups, [id, prefs]) => {
+    // console.log({
+    //   id,
+    //   pr: sortGroupsByPreference(prefs, groups),
+    //   groups,
+    //   u: compareGroupsByPreference(prefs, groups["1"], groups["2"]),
+    // }),
 
-const groups = new Array(100).reduce(
+    // const inGroup = Object.entries(groups).find(([_groupId, group]) => group.includes(id))?.[0]
+    // const init = inGroup ? { ...groups, [inGroup]: groups[inGroup].filter((member) => member != id) } : groups
+    const init = groups
+    return sortGroupsByPreference(prefs, init).reduce((groups, groupId) => {
+      if (Object.values(groups).some((group) => group.includes(id))) {
+        return groups
+      } else if (
+        groups[groupId].length < GROUP_SIZE &&
+        groups[groupId].every((member) => !data[member].unwanted.includes(id))
+      ) {
+        return { ...groups, [groupId]: [...groups[groupId], id] }
+      } else if (groupWantsUser(id, groups[groupId])) {
+        return { ...groups, [groupId]: groupWantsUser(id, groups[groupId])! }
+      } else {
+        return groups
+      }
+    }, init)
+  }, initial)
+
+const groups = new Array(1000).reduce(
   (groups) =>
     Object.keys(data).every((user) => Object.values(groups).flat().includes(user)) ? getGroups(groups, data) : groups,
   getGroups(
