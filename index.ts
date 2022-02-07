@@ -23,32 +23,32 @@ function shuffle<T>(array: T[]) {
 }
 
 const data: Record<UserId, Prefs> = {
-  a: { wanted: ["b", "c", "d"], unwanted: ["e"] },
-  b: { wanted: ["a", "e", "d"], unwanted: ["c"] },
-  c: { wanted: ["f", "e", "d"], unwanted: ["b"] },
-  d: { wanted: ["f", "b", "c"], unwanted: ["a"] },
-  e: { wanted: ["c", "b", "a"], unwanted: ["g"] },
-  f: { wanted: ["b", "d", "e"], unwanted: ["h"] },
-  g: { wanted: ["a", "c", "e"], unwanted: ["b"] },
-  h: { wanted: ["e", "d", "f"], unwanted: ["d"] },
-  i: { wanted: ["f", "h", "a"], unwanted: ["f"] },
-  j: { wanted: ["d", "c", "e"], unwanted: ["b"] },
-  k: { wanted: ["b", "j", "c"], unwanted: ["a"] },
-  l: { wanted: ["n", "k", "z"], unwanted: ["g"] },
-  m: { wanted: ["j", "t", "w"], unwanted: ["z"] },
-  n: { wanted: ["q", "k", "i"], unwanted: ["s"] },
-  o: { wanted: ["k", "o", "m"], unwanted: ["h"] },
-  p: { wanted: ["u", "p", "p"], unwanted: ["m"] },
-  q: { wanted: ["x", "w", "y"], unwanted: ["l"] },
-  r: { wanted: ["m", "m", "e"], unwanted: ["g"] },
-  s: { wanted: ["c", "u", "s"], unwanted: ["i"] },
-  t: { wanted: ["p", "l", "m"], unwanted: ["g"] },
-  u: { wanted: ["n", "d", "v"], unwanted: ["c"] },
-  v: { wanted: ["y", "g", "x"], unwanted: ["a"] },
-  w: { wanted: ["p", "f", "g"], unwanted: ["x"] },
-  x: { wanted: ["b", "l", "i"], unwanted: ["n"] },
-  y: { wanted: ["q", "l", "o"], unwanted: ["k"] },
-  z: { wanted: ["t", "n", "q"], unwanted: ["l"] },
+  a: { wanted: ["b", "c", "d", "z", "q", "w"], unwanted: ["e", "j"] },
+  b: { wanted: ["a", "e", "d", "r", "w", "e"], unwanted: ["c", "f"] },
+  c: { wanted: ["f", "e", "d", "y", "e", "t"], unwanted: ["b", "a"] },
+  d: { wanted: ["f", "b", "c", "u", "r", "y"], unwanted: ["a", "g"] },
+  e: { wanted: ["c", "b", "a", "i", "t", "h"], unwanted: ["g", "w"] },
+  f: { wanted: ["b", "d", "e", "o", "y", "i"], unwanted: ["h", "x"] },
+  g: { wanted: ["a", "c", "e", "p", "u", "o"], unwanted: ["b", "q"] },
+  h: { wanted: ["e", "d", "f", "m", "i", "n"], unwanted: ["d", "o"] },
+  i: { wanted: ["j", "h", "a", "b", "o", "v"], unwanted: ["f", "l"] },
+  j: { wanted: ["d", "c", "e", "c", "p", "x"], unwanted: ["b", "v"] },
+  k: { wanted: ["b", "j", "c", "x", "l", "z"], unwanted: ["a", "n"] },
+  l: { wanted: ["n", "k", "z", "s", "k", "a"], unwanted: ["g", "m"] },
+  m: { wanted: ["j", "t", "w", "a", "h", "r"], unwanted: ["z", "e"] },
+  n: { wanted: ["q", "k", "i", "w", "g", "y"], unwanted: ["s", "t"] },
+  o: { wanted: ["k", "o", "m", "r", "f", "u"], unwanted: ["h", "j"] },
+  p: { wanted: ["u", "c", "j", "y", "s", "i"], unwanted: ["m", "o"] },
+  q: { wanted: ["x", "w", "y", "u", "z", "e"], unwanted: ["l", "b"] },
+  r: { wanted: ["m", "m", "e", "i", "a", "t"], unwanted: ["g", "n"] },
+  s: { wanted: ["c", "u", "a", "o", "q", "y"], unwanted: ["i", "r"] },
+  t: { wanted: ["p", "l", "m", "e", "w", "u"], unwanted: ["g", "q"] },
+  u: { wanted: ["n", "d", "v", "a", "t", "x"], unwanted: ["c", "o"] },
+  v: { wanted: ["y", "g", "x", "b", "u", "s"], unwanted: ["a", "k"] },
+  w: { wanted: ["p", "f", "g", "z", "i", "v"], unwanted: ["x", "m"] },
+  x: { wanted: ["b", "l", "i", "a", "o", "x"], unwanted: ["n", "v"] },
+  y: { wanted: ["q", "l", "o", "b", "r", "r"], unwanted: ["k", "z"] },
+  z: { wanted: ["t", "n", "q", "m", "a", "b"], unwanted: ["l", "o"] },
 }
 
 const isUnwanted = (byPrefs: Prefs) => (user: UserId) => byPrefs.unwanted.includes(user)
@@ -131,5 +131,28 @@ const groups = new Array<never>(1000).reduce(
     data
   )
 )
+
+if (
+  Object.values(groups).some((group) =>
+    group.some((user) => group.some((otherUser) => data[user].unwanted.includes(otherUser)))
+  )
+) {
+  console.error("Has unwanted")
+}
+
+console.log(
+  Object.values(groups).flatMap((group) =>
+    group.filter((user) => group.some((otherUser) => data[user].wanted.includes(otherUser)))
+  ).length
+)
+
+if (
+  Object.values(groups).flatMap((group) =>
+    group.filter((user) => group.some((otherUser) => data[user].wanted.includes(otherUser)))
+  ).length <=
+  Object.keys(data).length / 2
+) {
+  console.error("Not enough wanted")
+}
 
 console.log(groups)
