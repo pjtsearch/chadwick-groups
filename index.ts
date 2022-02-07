@@ -72,7 +72,9 @@ const compareGroupsByPreference = (prefs: Prefs, group: Group, otherGroup: Group
   (group.filter(isWanted(prefs)).length > 2 ? 2 : 0) +
   (otherGroup.filter(isWanted(prefs)).length > 2 ? -2 : 0) +
   (group.filter(isWanted(prefs)).length > 0 ? -3 : 3) +
-  (otherGroup.filter(isWanted(prefs)).length > 0 ? 3 : -3)
+  (otherGroup.filter(isWanted(prefs)).length > 0 ? 3 : -3) +
+  (group.filter(isWanted(prefs)).length == 1 ? -6 : 6) +
+  (otherGroup.filter(isWanted(prefs)).length == 1 ? 6 : -6)
 
 const sortGroupsByPreference = (prefs: Prefs, groups: Record<GroupId, Group>) =>
   Object.entries(groups)
