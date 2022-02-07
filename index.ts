@@ -1,7 +1,7 @@
-type UserId = string
-type Prefs = { wanted: UserId[]; unwanted: UserId[] }
-type Group = UserId[]
-type GroupId = string
+export type UserId = string
+export type Prefs = { wanted: UserId[]; unwanted: UserId[] }
+export type Group = UserId[]
+export type GroupId = string
 
 const GROUP_SIZE = 4
 
@@ -22,39 +22,10 @@ function shuffle<T>(array: T[]) {
   return array
 }
 
-const data: Record<UserId, Prefs> = {
-  a: { wanted: ["b", "c", "d", "z", "q", "w"], unwanted: ["e", "j"] },
-  b: { wanted: ["a", "e", "d", "r", "w", "e"], unwanted: ["c", "f"] },
-  c: { wanted: ["f", "e", "d", "y", "e", "t"], unwanted: ["b", "a"] },
-  d: { wanted: ["f", "b", "c", "u", "r", "y"], unwanted: ["a", "g"] },
-  e: { wanted: ["c", "b", "a", "i", "t", "h"], unwanted: ["g", "w"] },
-  f: { wanted: ["b", "d", "e", "o", "y", "i"], unwanted: ["h", "x"] },
-  g: { wanted: ["a", "c", "e", "p", "u", "o"], unwanted: ["b", "q"] },
-  h: { wanted: ["e", "d", "f", "m", "i", "n"], unwanted: ["d", "o"] },
-  i: { wanted: ["j", "h", "a", "b", "o", "v"], unwanted: ["f", "l"] },
-  j: { wanted: ["d", "c", "e", "c", "p", "x"], unwanted: ["b", "v"] },
-  k: { wanted: ["b", "j", "c", "x", "l", "z"], unwanted: ["a", "n"] },
-  l: { wanted: ["n", "k", "z", "s", "k", "a"], unwanted: ["g", "m"] },
-  m: { wanted: ["j", "t", "w", "a", "h", "r"], unwanted: ["z", "e"] },
-  n: { wanted: ["q", "k", "i", "w", "g", "y"], unwanted: ["s", "t"] },
-  o: { wanted: ["k", "o", "m", "r", "f", "u"], unwanted: ["h", "j"] },
-  p: { wanted: ["u", "c", "j", "y", "s", "i"], unwanted: ["m", "o"] },
-  q: { wanted: ["x", "w", "y", "u", "z", "e"], unwanted: ["l", "b"] },
-  r: { wanted: ["m", "m", "e", "i", "a", "t"], unwanted: ["g", "n"] },
-  s: { wanted: ["c", "u", "a", "o", "q", "y"], unwanted: ["i", "r"] },
-  t: { wanted: ["p", "l", "m", "e", "w", "u"], unwanted: ["g", "q"] },
-  u: { wanted: ["n", "d", "v", "a", "t", "x"], unwanted: ["c", "o"] },
-  v: { wanted: ["y", "g", "x", "b", "u", "s"], unwanted: ["a", "k"] },
-  w: { wanted: ["p", "f", "g", "z", "i", "v"], unwanted: ["x", "m"] },
-  x: { wanted: ["b", "l", "i", "a", "o", "x"], unwanted: ["n", "v"] },
-  y: { wanted: ["q", "l", "o", "b", "r", "r"], unwanted: ["k", "z"] },
-  z: { wanted: ["t", "n", "q", "m", "a", "b"], unwanted: ["l", "o"] },
-}
-
 const isUnwanted = (byPrefs: Prefs) => (user: UserId) => byPrefs.unwanted.includes(user)
 const isWanted = (byPrefs: Prefs) => (user: UserId) => byPrefs.wanted.includes(user)
 
-const groupWantsUser = (newUser: UserId, group: Group): Group | undefined =>
+const groupWantsUser = (newUser: UserId, group: Group, data: Record<string, Prefs>): Group | undefined =>
   group
     .map((member) => {
       const replaced = [...group.filter((id) => id != member), newUser]
@@ -101,58 +72,60 @@ const getGroups = (initial: Record<GroupId, Group>, data: Record<UserId, Prefs>)
         groups[groupId].every((member) => !data[member].unwanted.includes(id))
       ) {
         return { ...groups, [groupId]: [...groups[groupId], id] }
-      } else if (groupWantsUser(id, groups[groupId])) {
-        return { ...groups, [groupId]: groupWantsUser(id, groups[groupId])! }
+      } else if (groupWantsUser(id, groups[groupId], data)) {
+        return { ...groups, [groupId]: groupWantsUser(id, groups[groupId], data)! }
       } else {
         return groups
       }
     }, init)
   }, initial)
 
-const groups = new Array<never>(1000).reduce(
-  (groups) =>
-    Object.keys(data).every((user) => Object.values(groups).flat().includes(user)) ? getGroups(groups, data) : groups,
-  getGroups(
-    {
-      "1": [],
-      "2": [],
-      "3": [],
-      "4": [],
-      "5": [],
-      "6": [],
-      "7": [],
-      "8": [],
-      "9": [],
-      "10": [],
-      "11": [],
-      "12": [],
-      "13": [],
-    },
-    data
+export const getGroupsIterations = (
+  iterations: number,
+  data: Record<string, Prefs>,
+  initial: Record<string, Group> = {
+    "1": [],
+    "2": [],
+    "3": [],
+    "4": [],
+    "5": [],
+    "6": [],
+    "7": [],
+    "8": [],
+    "9": [],
+    "10": [],
+    "11": [],
+    "12": [],
+    "13": [],
+  }
+) =>
+  new Array<never>(iterations).reduce(
+    (groups) =>
+      Object.keys(data).every((user) => Object.values(groups).flat().includes(user)) ? getGroups(groups, data) : groups,
+    getGroups(initial, data)
   )
-)
 
-if (
-  Object.values(groups).some((group) =>
-    group.some((user) => group.some((otherUser) => data[user].unwanted.includes(otherUser)))
-  )
-) {
-  console.error("Has unwanted")
-}
+// if (
+//   Object.values(groups).some((group) =>
+//     group.some((user) => group.some((otherUser) => data[user].unwanted.includes(otherUser)))
+//   )
+// ) {
+//   console.error("Has unwanted")
+// }
 
-console.log(
-  Object.values(groups).flatMap((group) =>
-    group.filter((user) => group.some((otherUser) => data[user].wanted.includes(otherUser)))
-  ).length
-)
+// console.log(
+//   Object.values(groups).flatMap((group) =>
+//     group.filter((user) => group.some((otherUser) => data[user].wanted.includes(otherUser)))
+//   ).length
+// )
 
-if (
-  Object.values(groups).flatMap((group) =>
-    group.filter((user) => group.some((otherUser) => data[user].wanted.includes(otherUser)))
-  ).length <=
-  Object.keys(data).length / 2
-) {
-  console.error("Not enough wanted")
-}
+// if (
+//   Object.values(groups).flatMap((group) =>
+//     group.filter((user) => group.some((otherUser) => data[user].wanted.includes(otherUser)))
+//   ).length <=
+//   Object.keys(data).length / 2
+// ) {
+//   console.error("Not enough wanted")
+// }
 
-console.log(groups)
+// console.log(getGroupsIterations(1000, data))
