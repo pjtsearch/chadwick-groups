@@ -107,7 +107,7 @@ const getGroups = (initial: Record<GroupId, Group>, data: Record<UserId, Prefs>)
     }, init)
   }, initial)
 
-const groups = new Array(1000).reduce(
+const groups = new Array<never>(1000).reduce(
   (groups) =>
     Object.keys(data).every((user) => Object.values(groups).flat().includes(user)) ? getGroups(groups, data) : groups,
   getGroups(
