@@ -1,5 +1,5 @@
 import { assertEquals } from "https://deno.land/std@0.125.0/testing/asserts.ts"
-import { getGroupsIterations, Prefs, UserId } from "./index.ts"
+import { getGroupsIterations, getWantedAmount, Prefs, UserId } from "./index.ts"
 
 const data: Record<UserId, Prefs> = {
   a: { wanted: ["b", "c", "d", "z", "q", "w"], unwanted: ["e", "j"] },
@@ -34,7 +34,7 @@ Deno.test({
   name: "Should have no unwanted",
   fn() {
     new Array(1000).forEach(() => {
-      const unwanted = Object.values(getGroupsIterations(5, data)).flatMap((group) =>
+      const unwanted = Object.values(getGroupsIterations(1000, data)).flatMap((group) =>
         group.filter((user) => group.some((otherUser) => data[user].unwanted.includes(otherUser)))
       )
       assertEquals(unwanted.length, 0)
@@ -45,14 +45,6 @@ Deno.test({
 Deno.test({
   name: "Should have enough wanted",
   fn() {
-    new Array(1000).forEach(() =>
-      assertEquals(
-        Object.values(getGroupsIterations(5, data)).flatMap((group) =>
-          group.filter((user) => group.some((otherUser) => data[user].wanted.includes(otherUser)))
-        ).length <=
-          Object.keys(data).length / 2,
-        true
-      )
-    )
+    assertEquals(getWantedAmount(getGroupsIterations(1000, data), data) > Object.keys(data).length / 1.2, true)
   },
 })

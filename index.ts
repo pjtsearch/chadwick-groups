@@ -25,6 +25,9 @@ function shuffle<T>(array: T[]) {
 const isUnwanted = (byPrefs: Prefs) => (user: UserId) => byPrefs.unwanted.includes(user)
 const isWanted = (byPrefs: Prefs) => (user: UserId) => byPrefs.wanted.includes(user)
 
+export const getWantedAmount = (groups: Record<string, Group>, data: Record<string, Prefs>) =>
+  Object.values(groups).flatMap((group) => group.filter((user) => group.some(isWanted(data[user])))).length
+
 const groupWantsUser = (newUser: UserId, group: Group, data: Record<string, Prefs>): Group | undefined =>
   group
     .map((member) => {
@@ -99,11 +102,10 @@ export const getGroupsIterations = (
     "13": [],
   }
 ) =>
-  new Array<never>(iterations).reduce(
-    (groups) =>
-      Object.keys(data).every((user) => Object.values(groups).flat().includes(user)) ? getGroups(groups, data) : groups,
-    getGroups(initial, data)
-  )
+  new Array<null>(iterations).fill(null).reduce((prev) => {
+    const curr = getGroups(initial, data)
+    return getWantedAmount(curr, data) > getWantedAmount(prev, data) ? curr : prev
+  }, getGroups(initial, data))
 
 // if (
 //   Object.values(groups).some((group) =>
