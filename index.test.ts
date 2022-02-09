@@ -45,6 +45,9 @@ Deno.test({
 Deno.test({
   name: "Should have enough wanted",
   fn() {
-    assertEquals(getWantedAmount(getGroupsIterations(1000, data), data) > Object.keys(data).length / 1.2, true)
+    const res = getGroupsIterations(1000, data)
+    assertEquals(getWantedAmount(res, data) >= Object.values(res).flat().length / 1.2, true)
+  },
+})
   },
 })
