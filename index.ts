@@ -6,6 +6,11 @@ export type GroupId = string
 
 const GROUP_SIZE = 4
 
+/**
+ * Randomizes the order of an array
+ * @param array The array to randomize
+ * @returns The randomized array
+ */
 function shuffle<T>(array: T[]) {
   let currentIndex = array.length,
     randomIndex
@@ -23,10 +28,34 @@ function shuffle<T>(array: T[]) {
   return array
 }
 
+/**
+ * Returns function that finds if another user is unwanted by certain prefs
+ * @param byPrefs The prefs to determine by
+ * @returns A function that returns whether another user is unwanted
+ */
 const isUnwanted = (byPrefs: Prefs) => (user: UserId) => byPrefs.unwanted.includes(user)
+
+/**
+ * Returns function that finds if another user is wanted by certain prefs
+ * @param byPrefs The prefs to determine by
+ * @returns A function that returns whether another user is wanted
+ */
 const isWanted = (byPrefs: Prefs) => (user: UserId) => byPrefs.wanted.includes(user)
+
+/**
+ * Returns function that finds if a user is of a certain gender
+ * @param gender The gender to determine by
+ * @param data The data to find genders with
+ * @returns A function that returns whether a user is of a certain gender
+ */
 const isGender = (gender: Gender, data: Record<string, Prefs>) => (user: UserId) => data[user].gender == gender
 
+/**
+ * Gets the unused users in a set of groups
+ * @param groups The groups to look through
+ * @param data The data to get all users with
+ * @returns The unused users
+ */
 const getUnusedUsers = (groups: Record<GroupId, Group>, data: Record<UserId, Prefs>) =>
   Object.keys(data).filter((user) => !Object.values(groups).some((group) => group.includes(user)))
 
