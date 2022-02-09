@@ -33,7 +33,7 @@ const data: Record<UserId, Prefs> = {
 Deno.test({
   name: "Should have no unwanted",
   fn() {
-    new Array(1000).forEach(() => {
+    new Array(1000).fill(null).forEach(() => {
       const unwanted = Object.values(getGroupsIterations(1000, data)).flatMap((group) =>
         group.filter((user) => group.some((otherUser) => data[user].unwanted.includes(otherUser)))
       )
