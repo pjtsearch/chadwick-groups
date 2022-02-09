@@ -1,5 +1,6 @@
+export type Gender = "male" | "female"
 export type UserId = string
-export type Prefs = { wanted: UserId[]; unwanted: UserId[] }
+export type Prefs = { wanted: UserId[]; unwanted: UserId[]; gender: Gender }
 export type Group = UserId[]
 export type GroupId = string
 
@@ -24,10 +25,34 @@ function shuffle<T>(array: T[]) {
 
 const isUnwanted = (byPrefs: Prefs) => (user: UserId) => byPrefs.unwanted.includes(user)
 const isWanted = (byPrefs: Prefs) => (user: UserId) => byPrefs.wanted.includes(user)
+const isGender = (gender: Gender, data: Record<string, Prefs>) => (user: UserId) => data[user].gender == gender
 
 export const getWantedAmount = (groups: Record<string, Group>, data: Record<string, Prefs>) =>
   Object.values(groups).flatMap((group) => group.filter((user) => group.some(isWanted(data[user])))).length
 
+// Higher is more wanted
+const getGroupScore = (group: Group, member: UserId, data: Record<string, Prefs>): number =>
+  group.reduce(
+    (score, otherMember) =>
+      score +
+      compareGroupsByPreference(
+        data[otherMember],
+        group.filter((u) => u != member),
+        group
+      ),
+    0
+  )
+
+const balanceGender = (group: Group, gender: Gender, data: Record<string, Prefs>): Group => {
+  let curr = group
+  while (curr.filter(isGender(gender, data)).length > Math.floor(GROUP_SIZE / 2)) {
+    const leastWanted = curr.filter(isGender(gender, data)).sort((member, otherMember) => getGroupScore(group, member, data) - getGroupScore(group, otherMember, data))
+    curr = curr.filter((u) => u !== leastWanted[0])
+  }
+  return curr
+}
+
+// FIXME: Only do if has a greater score than someone else
 const groupWantsUser = (newUser: UserId, group: Group, data: Record<string, Prefs>): Group | undefined =>
   group
     .map((member) => {
@@ -41,6 +66,7 @@ const groupWantsUser = (newUser: UserId, group: Group, data: Record<string, Pref
     .sort(({ rank }, { rank: otherRank }) => rank - otherRank)
     ?.at(0)?.replaced
 
+// Less is more wanted
 const compareGroupsByPreference = (prefs: Prefs, group: Group, otherGroup: Group) =>
   (group.filter(isUnwanted(prefs)).length - otherGroup.filter(isUnwanted(prefs)).length) * 2000 +
   (group.filter(isWanted(prefs)).length > 2 ? 2 : 0) +
@@ -74,9 +100,12 @@ const getGroups = (initial: Record<GroupId, Group>, data: Record<UserId, Prefs>)
         groups[groupId].length < GROUP_SIZE &&
         groups[groupId].every((member) => !data[member].unwanted.includes(id))
       ) {
-        return { ...groups, [groupId]: [...groups[groupId], id] }
+        return { ...groups, [groupId]: balanceGender([...groups[groupId], id], data[id].gender, data) }
       } else if (groupWantsUser(id, groups[groupId], data)) {
-        return { ...groups, [groupId]: groupWantsUser(id, groups[groupId], data)! }
+        return {
+          ...groups,
+          [groupId]: balanceGender(groupWantsUser(id, groups[groupId], data)!, data[id].gender, data),
+        }
       } else {
         return groups
       }
@@ -105,7 +134,7 @@ export const getGroupsIterations = (
   new Array<null>(iterations).fill(null).reduce((prev) => {
     const curr = getGroups(initial, data)
     return getWantedAmount(curr, data) > getWantedAmount(prev, data) ? curr : prev
-  }, getGroups(initial, data))
+  }, initial)
 
 // if (
 //   Object.values(groups).some((group) =>
