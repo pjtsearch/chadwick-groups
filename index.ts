@@ -159,7 +159,7 @@ const withUnusedUsers = (initial: Record<GroupId, Group>, data: Record<UserId, P
       }
     }, groups)
   }, groupsWithoutConflict)
-  const groupsWithLengthConflict = getUnusedUsers(groupsWithoutConflict, data).reduce((groups, userId) => {
+  const groupsWithLengthConflict = getUnusedUsers(groupsWithGenderConflict, data).reduce((groups, userId) => {
     const sortedGroups = Object.entries(groups)
       .sort(([_id, group], [_otherId, otherGroup]) => group.length - otherGroup.length)
       .filter(([_id, g]) => g.length > 0)
@@ -176,17 +176,17 @@ const withUnusedUsers = (initial: Record<GroupId, Group>, data: Record<UserId, P
         return groups
       }
     }, groups)
-  }, groupsWithoutConflict)
-  console.log({
-    initial,
-    groupsWithoutConflict,
-    groupsWithGenderConflict,
-    groupsWithLengthConflict,
-    sortedGroups: Object.entries(initial)
-      .sort(([_id, group], [_otherId, otherGroup]) => group.length - otherGroup.length)
-      .filter(([_id, g]) => g.length > 0)
-      .map(([id]) => id),
-  })
+  }, groupsWithGenderConflict)
+  // console.log({
+  //   initial,
+  //   groupsWithoutConflict,
+  //   groupsWithGenderConflict,
+  //   groupsWithLengthConflict,
+  //   sortedGroups: Object.entries(initial)
+  //     .sort(([_id, group], [_otherId, otherGroup]) => group.length - otherGroup.length)
+  //     .filter(([_id, g]) => g.length > 0)
+  //     .map(([id]) => id),
+  // })
   return groupsWithLengthConflict
 }
 
@@ -209,8 +209,12 @@ export const getGroupsIterations = (
     "13": [],
   }
 ) =>
-  new Array<null>(iterations).fill(null).reduce((prev) => {
+  new Array<null>(1).fill(null).reduce((prev) => {
     const curr = getGroups(initial, data)
+
+    // Only add unwanted to groups on later loops
+
+    // console.log(Object.values(curr).map((g) => g.map((u) => [u, data[u].gender])))
     return getWantedAmount(curr, data) > getWantedAmount(prev, data) ? curr : prev
   }, initial)
 
