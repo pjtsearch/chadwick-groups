@@ -30,6 +30,12 @@ const isGender = (gender: Gender, data: Record<string, Prefs>) => (user: UserId)
 const getUnusedUsers = (groups: Record<GroupId, Group>, data: Record<UserId, Prefs>) =>
   Object.keys(data).filter((user) => !Object.values(groups).some((group) => group.includes(user)))
 
+const sortGroupsByLength = (groups: Record<GroupId, Group>) =>
+  Object.entries(groups)
+    .sort(([_id, group], [_otherId, otherGroup]) => group.length - otherGroup.length)
+    .filter(([_id, g]) => g.length > 0)
+    .map(([id]) => id)
+
 export const getWantedAmount = (groups: Record<string, Group>, data: Record<string, Prefs>) =>
   Object.values(groups).flatMap((group) => group.filter((user) => group.some(isWanted(data[user])))).length
 
@@ -87,35 +93,27 @@ const sortGroupsByPreference = (prefs: Prefs, groups: Record<GroupId, Group>) =>
 
 const getGroups = (initial: Record<GroupId, Group>, data: Record<UserId, Prefs>) =>
   withUnusedUsers(
-    shuffle(Object.entries(data)).reduce((groups, [id, prefs]) => {
-      // console.log({
-      //   id,
-      //   pr: sortGroupsByPreference(prefs, groups),
-      //   groups,
-      //   u: compareGroupsByPreference(prefs, groups["1"], groups["2"]),
-      // }),
-
-      // const inGroup = Object.entries(groups).find(([_groupId, group]) => group.includes(id))?.[0]
-      // const init = inGroup ? { ...groups, [inGroup]: groups[inGroup].filter((member) => member != id) } : groups
-      const init = groups
-      return sortGroupsByPreference(prefs, init).reduce((groups, groupId) => {
-        if (Object.values(groups).some((group) => group.includes(id))) {
-          return groups
-        } else if (
-          groups[groupId].length < GROUP_SIZE &&
-          groups[groupId].every((member) => !data[member].unwanted.includes(id))
-        ) {
-          return { ...groups, [groupId]: balanceGender([...groups[groupId], id], data[id].gender, data) }
-        } else if (groupWantsUser(id, groups[groupId], data)) {
-          return {
-            ...groups,
-            [groupId]: balanceGender(groupWantsUser(id, groups[groupId], data)!, data[id].gender, data),
+    shuffle(Object.entries(data)).reduce(
+      (groups, [id, prefs]) =>
+        sortGroupsByPreference(prefs, groups).reduce((groups, groupId) => {
+          if (Object.values(groups).some((group) => group.includes(id))) {
+            return groups
+          } else if (
+            groups[groupId].length < GROUP_SIZE &&
+            groups[groupId].every((member) => !data[member].unwanted.includes(id))
+          ) {
+            return { ...groups, [groupId]: balanceGender([...groups[groupId], id], data[id].gender, data) }
+          } else if (groupWantsUser(id, groups[groupId], data)) {
+            return {
+              ...groups,
+              [groupId]: balanceGender(groupWantsUser(id, groups[groupId], data)!, data[id].gender, data),
+            }
+          } else {
+            return groups
           }
-        } else {
-          return groups
-        }
-      }, init)
-    }, initial),
+        }, groups),
+      initial
+    ),
     data
   )
 
@@ -124,21 +122,19 @@ const withUnusedUsers = (initial: Record<GroupId, Group>, data: Record<UserId, P
     initial: Record<GroupId, Group>,
     constraints: (group: Group, userId: UserId) => boolean
   ) =>
-    getUnusedUsers(initial, data).reduce((groups, userId) => {
-      const sortedGroups = Object.entries(groups)
-        .sort(([_id, group], [_otherId, otherGroup]) => group.length - otherGroup.length)
-        .filter(([_id, g]) => g.length > 0)
-        .map(([id]) => id)
-      return sortedGroups.reduce((groups, groupId) => {
-        if (Object.values(groups).flat().includes(userId)) {
-          return groups
-        } else if (constraints(groups[groupId], userId)) {
-          return { ...groups, [groupId]: [...groups[groupId], userId] }
-        } else {
-          return groups
-        }
-      }, groups)
-    }, initial)
+    getUnusedUsers(initial, data).reduce(
+      (groups, userId) =>
+        sortGroupsByLength(groups).reduce((groups, groupId) => {
+          if (Object.values(groups).flat().includes(userId)) {
+            return groups
+          } else if (constraints(groups[groupId], userId)) {
+            return { ...groups, [groupId]: [...groups[groupId], userId] }
+          } else {
+            return groups
+          }
+        }, groups),
+      initial
+    )
 
   const groupsWithoutConflict = addUsersWithConstraints(
     initial,
