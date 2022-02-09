@@ -49,5 +49,11 @@ Deno.test({
     assertEquals(getWantedAmount(res, data) >= Object.values(res).flat().length / 1.2, true)
   },
 })
+
+Deno.test({
+  name: "Should have all users",
+  fn() {
+    const groupedUsers = Object.values(getGroupsIterations(100, data)).flat()
+    assertEquals(groupedUsers.length, Object.keys(data).length)
   },
 })
