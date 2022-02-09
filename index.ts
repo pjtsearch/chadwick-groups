@@ -198,7 +198,7 @@ export const getGroupsIterations = (
     "13": [],
   }
 ) =>
-  new Array<null>(iterations).fill(null).reduce((prev) => {
+  [...new Array(iterations).keys()].reduce((prev) => {
     const curr = getGroups(initial, data)
 
     // Only add unwanted to groups on later loops

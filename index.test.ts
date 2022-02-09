@@ -33,7 +33,7 @@ const data: Record<UserId, Prefs> = {
 Deno.test({
   name: "Should have no unwanted",
   fn() {
-    new Array(10).fill(null).forEach(() => {
+    [...new Array(10).keys()].forEach(() => {
       const unwanted = Object.values(getGroupsIterations(5, data)).flatMap((group) =>
         group.filter((user) => group.some((otherUser) => data[user].unwanted.includes(otherUser)))
       )
@@ -45,7 +45,7 @@ Deno.test({
 Deno.test({
   name: "Should have enough wanted",
   fn() {
-    new Array(10).fill(null).forEach(() => {
+    [...new Array(10).keys()].forEach(() => {
       const res = getGroupsIterations(10, data)
       assertEquals(getWantedAmount(res, data) >= Object.values(res).flat().length / 1.2, true)
     })
@@ -55,7 +55,7 @@ Deno.test({
 Deno.test({
   name: "Should have all users",
   fn() {
-    new Array(100).fill(null).forEach(() => {
+    [...new Array(100).keys()].forEach(() => {
       const groupedUsers = Object.values(getGroupsIterations(100, data)).flat()
       assertEquals(groupedUsers.length, Object.keys(data).length)
     })
