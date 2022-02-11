@@ -1,3 +1,5 @@
+import shuffle from "lodash.shuffle"
+
 export type Gender = "male" | "female"
 export type UserId = string
 export type Prefs = { wanted: UserId[]; unwanted: UserId[]; gender: Gender }
@@ -5,28 +7,6 @@ export type Group = UserId[]
 export type GroupId = string
 
 const GROUP_SIZE = 4
-
-/**
- * Randomizes the order of an array
- * @param array The array to randomize
- * @returns The randomized array
- */
-function shuffle<T>(array: T[]) {
-  let currentIndex = array.length,
-    randomIndex
-
-  // While there remain elements to shuffle...
-  while (currentIndex != 0) {
-    // Pick a remaining element...
-    randomIndex = Math.floor(Math.random() * currentIndex)
-    currentIndex--
-
-    // And swap it with the current element.
-    ;[array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]]
-  }
-
-  return array
-}
 
 /**
  * Returns function that finds if another user is unwanted by certain prefs
