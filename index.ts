@@ -79,6 +79,17 @@ const sortGroupsByLength = (groups: Record<GroupId, Group>) =>
 export const getWantedAmount = (groups: Record<GroupId, Group>, data: Record<UserId, Prefs>) =>
   Object.values(groups).flatMap((group) => group.filter((user) => group.some(isWanted(data[user])))).length
 
+/**
+ * Gets how many users have people have at least one person they want in their group
+ * @param groups The groups to look through
+ * @param data The preference data
+ * @returns The amount of users that have people have people they want in their group
+ */
+export const getUnwantedAmount = (groups: Record<GroupId, Group>, data: Record<UserId, Prefs>) =>
+  Object.values(groups).flatMap((group) =>
+    group.filter((user) => group.some((otherUser) => data[user].unwanted.includes(otherUser)))
+  ).length
+
 // Higher is more wanted
 /**
  * Gets how much other users prefer a group without this member compared to one with them,
@@ -245,11 +256,10 @@ const withUnusedUsers = (initial: Record<GroupId, Group>, data: Record<UserId, P
       group.every((member) => !data[member].unwanted.includes(userId)) &&
       group.every((member) => !data[userId].unwanted.includes(member))
   )
-  // TODO: Readd when change tests
-  // const groupsWithWantedConflict = addUsersWithConstraints(groupsWithLengthConflict, (group, userId) =>
-  //   group.every((member) => !data[userId].unwanted.includes(member))
-  // )
-  // const groupsWithSelfWantedConflict = addUsersWithConstraints(groupsWithWantedConflict, (_group, _userId) => true)
+  const groupsWithWantedConflict = addUsersWithConstraints(groupsWithLengthConflict, (group, userId) =>
+    group.every((member) => !data[userId].unwanted.includes(member))
+  )
+  const groupsWithSelfWantedConflict = addUsersWithConstraints(groupsWithWantedConflict, (_group, _userId) => true)
   // console.log({
   //   initial,
   //   groupsWithoutConflict,
@@ -260,7 +270,7 @@ const withUnusedUsers = (initial: Record<GroupId, Group>, data: Record<UserId, P
   //     .filter(([_id, g]) => g.length > 0)
   //     .map(([id]) => id),
   // })
-  return groupsWithLengthConflict
+  return groupsWithSelfWantedConflict
 }
 
 /**
@@ -295,7 +305,10 @@ export const getGroupsIterations = (
     // Only add unwanted to groups on later loops
 
     // console.log(Object.values(curr).map((g) => g.map((u) => [u, data[u].gender])))
-    return getWantedAmount(curr, data) > getWantedAmount(prev, data) ? curr : prev
+    return getUnwantedAmount(curr, data) <= getUnwantedAmount(prev, data) &&
+      getWantedAmount(curr, data) > getWantedAmount(prev, data)
+      ? curr
+      : prev
   }, initial)
 
 // if (
