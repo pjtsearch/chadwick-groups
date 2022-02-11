@@ -87,7 +87,7 @@ const getGroupScore = (group: Group, member: UserId, data: Record<UserId, Prefs>
       score +
       compareGroupsByPreference(
         data[otherMember],
-        group.filter((u) => u != member),
+        without(group, member),
         group
       ),
     0
@@ -106,7 +106,7 @@ const balanceGender = (group: Group, gender: Gender, data: Record<UserId, Prefs>
     const leastWanted = curr
       .filter(isGender(gender, data))
       .sort((member, otherMember) => getGroupScore(group, member, data) - getGroupScore(group, otherMember, data))
-    curr = curr.filter((u) => u !== leastWanted[0])
+    curr = without(curr, leastWanted[0])
   }
   return curr
 }
@@ -121,7 +121,7 @@ const balanceGender = (group: Group, gender: Gender, data: Record<UserId, Prefs>
 const groupWantsUser = (newUser: UserId, group: Group, data: Record<UserId, Prefs>): boolean =>
   group
     .map((member) => {
-      const replaced = [...group.filter((id) => id != member), newUser]
+      const replaced = [...without(group, member), newUser]
       return {
         replaced,
         rank: group.reduce((score, member) => score + compareGroupsByPreference(data[member], replaced, group), 0),
@@ -132,7 +132,7 @@ const groupWantsUser = (newUser: UserId, group: Group, data: Record<UserId, Pref
 const groupLessWantedUser = (newUser: UserId, group: Group, data: Record<UserId, Prefs>): UserId | undefined =>
   group
     .map((member) => {
-      const replaced = [...group.filter((id) => id != member), newUser]
+      const replaced = [...without(group, member), newUser]
       return {
         member,
         rank: group.reduce((score, member) => score + compareGroupsByPreference(data[member], replaced, group), 0),
