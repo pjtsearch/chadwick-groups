@@ -116,12 +116,9 @@ const groupWantsUser = (newUser: UserId, group: Group, data: Record<UserId, Pref
   group
     .map((member) => {
       const replaced = [...without(group, member), newUser]
-      return {
-        replaced,
-        rank: group.reduce((score, member) => score + compareGroupsByPreference(data[member], replaced, group), 0),
-      }
+      return group.reduce((score, member) => score + compareGroupsByPreference(data[member], replaced, group), 0)
     })
-    .some(({ rank }) => rank < 0)
+    .some((rank) => rank < 0)
 
 const groupLessWantedUser = (newUser: UserId, group: Group, data: Record<UserId, Prefs>): UserId | undefined =>
   group
