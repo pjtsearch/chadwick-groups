@@ -172,34 +172,65 @@ const sortGroupsByPreference = (prefs: Prefs, groups: Record<GroupId, Group>) =>
  * @returns Groups with all users
  */
 const getGroups = (initial: Record<GroupId, Group>, data: Record<UserId, Prefs>) =>
-  withUnusedUsers(
-    shuffle(Object.entries(data)).reduce(
-      (groups, [id, prefs]) =>
-        sortGroupsByPreference(prefs, groups).reduce((groups, groupId) => {
-          if (Object.values(groups).some((group) => group.includes(id))) {
-            return groups
-          } else if (
-            groups[groupId].length < GROUP_SIZE &&
-            groups[groupId].every((member) => !data[member].unwanted.includes(id))
-          ) {
-            return { ...groups, [groupId]: balanceGender([...groups[groupId], id], data[id].gender, data) }
-          } else if (groupWantsUser(id, groups[groupId], data)) {
-            return {
-              ...groups,
-              [groupId]: balanceGender(
-                [...without(groups[groupId], groupLessWantedUser(id, groups[groupId], data)!), id],
-                data[id].gender,
-                data
-              ),
+  flow(
+    Object.entries,
+    shuffle,
+    (shuffled: [UserId, Prefs][]) =>
+      shuffled.reduce(
+        (groups, [id, prefs]) =>
+          sortGroupsByPreference(prefs, groups).reduce((groups, groupId) => {
+            if (Object.values(groups).some((group) => group.includes(id))) {
+              return groups
+            } else if (
+              groups[groupId].length < GROUP_SIZE &&
+              groups[groupId].every((member) => !data[member].unwanted.includes(id))
+            ) {
+              return { ...groups, [groupId]: balanceGender([...groups[groupId], id], data[id].gender, data) }
+            } else if (groupWantsUser(id, groups[groupId], data)) {
+              return {
+                ...groups,
+                [groupId]: balanceGender(
+                  [...without(groups[groupId], groupLessWantedUser(id, groups[groupId], data)!), id],
+                  data[id].gender,
+                  data
+                ),
+              }
+            } else {
+              return groups
             }
-          } else {
-            return groups
-          }
-        }, groups),
-      initial
-    ),
-    data
-  )
+          }, groups),
+        initial
+      ),
+    withUnusedUsers(data)
+  )(data)
+  // withUnusedUsers(
+  //   shuffle(Object.entries(data)).reduce(
+  //     (groups, [id, prefs]) =>
+  //       sortGroupsByPreference(prefs, groups).reduce((groups, groupId) => {
+  //         if (Object.values(groups).some((group) => group.includes(id))) {
+  //           return groups
+  //         } else if (
+  //           groups[groupId].length < GROUP_SIZE &&
+  //           groups[groupId].every((member) => !data[member].unwanted.includes(id))
+  //         ) {
+  //           return { ...groups, [groupId]: balanceGender([...groups[groupId], id], data[id].gender, data) }
+  //         } else if (groupWantsUser(id, groups[groupId], data)) {
+  //           return {
+  //             ...groups,
+  //             [groupId]: balanceGender(
+  //               [...without(groups[groupId], groupLessWantedUser(id, groups[groupId], data)!), id],
+  //               data[id].gender,
+  //               data
+  //             ),
+  //           }
+  //         } else {
+  //           return groups
+  //         }
+  //       }, groups),
+  //     initial
+  //   ),
+  //   data
+  // )
 
 /**
  * Adds unused users by first adding without any conflicts, then disregarding gender size,
@@ -208,7 +239,7 @@ const getGroups = (initial: Record<GroupId, Group>, data: Record<UserId, Prefs>)
  * @param data The preference data
  * @returns The group with unused users added
  */
-const withUnusedUsers = (initial: Record<GroupId, Group>, data: Record<UserId, Prefs>): Record<GroupId, Group> => {
+const withUnusedUsers = (data: Record<UserId, Prefs>) => (initial: Record<GroupId, Group>): Record<GroupId, Group> => {
   const addUsersWithConstraints =
     (constraints: (group: Group, userId: UserId) => boolean) => (initial: Record<GroupId, Group>) =>
       getUnusedUsers(initial, data).reduce(
