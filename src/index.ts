@@ -7,7 +7,7 @@ export type Prefs = { wanted: UserId[]; unwanted: UserId[]; gender: Gender }
 export type Group = UserId[]
 export type GroupId = string
 
-const GROUP_SIZE = 4
+export const GROUP_SIZE = 4
 
 /**
  * Returns function that finds if another user is unwanted by certain prefs

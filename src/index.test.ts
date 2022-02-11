@@ -1,5 +1,5 @@
 import range from "lodash.range"
-import { getGroupsIterations, getWantedAmount, Prefs, UserId } from "./"
+import { getGroupsIterations, getWantedAmount, GROUP_SIZE, Prefs, UserId } from "./"
 
 const data: Record<UserId, Prefs> = {
   a: { wanted: ["b", "c", "d", "z", "q", "w"], unwanted: ["e", "j"], gender: "male" },
@@ -50,5 +50,16 @@ test("Should have all users", () => {
   range(10).forEach(() => {
     const groupedUsers = Object.values(getGroupsIterations(10, data)).flat()
     expect(groupedUsers.length).toBe(Object.keys(data).length)
+  })
+})
+
+test("Should have gender balance", () => {
+  range(10).forEach(() => {
+    const groupsGenders = Object.values(getGroupsIterations(10, data))
+      .map((group) => group.map((user) => data[user].gender))
+      .filter((g) => g.length > 0)
+    const difference = groupsGenders.map((group) => Math.abs(GROUP_SIZE / 2 - group.filter((g) => g == "male").length))
+    const avgDiff = difference.reduce((total, curr) => total + curr, 0) / groupsGenders.length
+    expect(avgDiff).toBeLessThanOrEqual(1)
   })
 })
