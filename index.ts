@@ -59,16 +59,35 @@ const isGender = (gender: Gender, data: Record<string, Prefs>) => (user: UserId)
 const getUnusedUsers = (groups: Record<GroupId, Group>, data: Record<UserId, Prefs>) =>
   Object.keys(data).filter((user) => !Object.values(groups).some((group) => group.includes(user)))
 
+/**
+ * Sorts groups by the amount of members
+ * @param groups The groups to sort
+ * @returns Sorted groups
+ */
 const sortGroupsByLength = (groups: Record<GroupId, Group>) =>
   Object.entries(groups)
     .sort(([_id, group], [_otherId, otherGroup]) => group.length - otherGroup.length)
     .filter(([_id, g]) => g.length > 0)
     .map(([id]) => id)
 
+/**
+ * Gets how many users have people have at least one person they want in their group
+ * @param groups The groups to look through
+ * @param data The preference data
+ * @returns The amount of users that have people have people they want in their group
+ */
 export const getWantedAmount = (groups: Record<string, Group>, data: Record<string, Prefs>) =>
   Object.values(groups).flatMap((group) => group.filter((user) => group.some(isWanted(data[user])))).length
 
 // Higher is more wanted
+/**
+ * Gets how much other users prefer a group without this member compared to one with them,
+ * lower means the group prefers the group without this member
+ * @param group The group to get prefs from
+ * @param member The member to get the score of
+ * @param data The preference data
+ * @returns How much other users prefer a group without this member compared to one with them
+ */
 const getGroupScore = (group: Group, member: UserId, data: Record<string, Prefs>): number =>
   group.reduce(
     (score, otherMember) =>
@@ -81,6 +100,13 @@ const getGroupScore = (group: Group, member: UserId, data: Record<string, Prefs>
     0
   )
 
+/**
+ * Gets the group with the correct number of a gender
+ * @param group The group to balance
+ * @param gender The gender to balance
+ * @param data The preference data
+ * @returns The group with the correct number of a gender
+ */
 const balanceGender = (group: Group, gender: Gender, data: Record<string, Prefs>): Group => {
   let curr = group
   while (curr.filter(isGender(gender, data)).length > Math.floor(GROUP_SIZE / 2)) {
@@ -92,6 +118,13 @@ const balanceGender = (group: Group, gender: Gender, data: Record<string, Prefs>
   return curr
 }
 
+/**
+ * Gets the group with the new user replacing another user if the other user is less wanted
+ * @param newUser The new user
+ * @param group The group to check
+ * @param data The preference data
+ * @returns The group with the new user added if they should be, or undefined
+ */
 const groupWantsUser = (newUser: UserId, group: Group, data: Record<string, Prefs>): Group | undefined =>
   group
     .map((member) => {
@@ -105,7 +138,15 @@ const groupWantsUser = (newUser: UserId, group: Group, data: Record<string, Pref
     .sort(({ rank }, { rank: otherRank }) => rank - otherRank)
     ?.at(0)?.replaced
 
-// Less is more wanted
+
+/**
+ * Compares group to be sorted from most to least liked
+ * @param prefs The prefs to use
+ * @param group A group
+ * @param otherGroup A group to compare with
+ * @returns A negative if the first group is more preferred, 0 if equal,
+ * or positive if other group is preferred
+ */
 const compareGroupsByPreference = (prefs: Prefs, group: Group, otherGroup: Group) =>
   (group.filter(isUnwanted(prefs)).length - otherGroup.filter(isUnwanted(prefs)).length) * 2000 +
   (group.filter(isWanted(prefs)).length > 2 ? 2 : 0) +
@@ -115,11 +156,23 @@ const compareGroupsByPreference = (prefs: Prefs, group: Group, otherGroup: Group
   (group.filter(isWanted(prefs)).length == 1 ? -6 : 6) +
   (otherGroup.filter(isWanted(prefs)).length == 1 ? 6 : -6)
 
+  /**
+   * Sorts groups by preference
+   * @param prefs The preference to sort by
+   * @param groups The groups to sort
+   * @returns The sorted ids of the groups
+   */
 const sortGroupsByPreference = (prefs: Prefs, groups: Record<GroupId, Group>) =>
   Object.entries(groups)
     .sort(([_id, group], [_otherId, otherGroup]) => compareGroupsByPreference(prefs, group, otherGroup))
     .map(([id, _data]) => id)
 
+/**
+ * Gets the desired groups
+ * @param initial The initial groups
+ * @param data The preference data
+ * @returns Groups with all users
+ */
 const getGroups = (initial: Record<GroupId, Group>, data: Record<UserId, Prefs>) =>
   withUnusedUsers(
     shuffle(Object.entries(data)).reduce(
@@ -146,6 +199,13 @@ const getGroups = (initial: Record<GroupId, Group>, data: Record<UserId, Prefs>)
     data
   )
 
+  /**
+   * Adds unused users by first adding without any conflicts, then disregarding gender size,
+   * then disregarding group size
+   * @param initial The initial groups
+   * @param data The preference data
+   * @returns The group with unused users added
+   */
 const withUnusedUsers = (initial: Record<GroupId, Group>, data: Record<UserId, Prefs>): Record<GroupId, Group> => {
   const addUsersWithConstraints = (
     initial: Record<GroupId, Group>,
@@ -204,6 +264,13 @@ const withUnusedUsers = (initial: Record<GroupId, Group>, data: Record<UserId, P
   return groupsWithLengthConflict
 }
 
+/**
+ * Tries multiple iterations to find groups with the most people having at least one wanted
+ * @param iterations The amount of iterations
+ * @param data The preference data
+ * @param initial The initial groups
+ * @returns The groups with the most wanted
+ */
 export const getGroupsIterations = (
   iterations: number,
   data: Record<string, Prefs>,
