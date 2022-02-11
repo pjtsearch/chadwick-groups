@@ -1,5 +1,6 @@
 import range from "lodash.range"
 import shuffle from "lodash.shuffle"
+import without from "lodash.without"
 
 export type Gender = "male" | "female"
 export type UserId = string
@@ -117,7 +118,7 @@ const balanceGender = (group: Group, gender: Gender, data: Record<UserId, Prefs>
  * @param data The preference data
  * @returns The group with the new user added if they should be, or undefined
  */
-const groupWantsUser = (newUser: UserId, group: Group, data: Record<UserId, Prefs>): Group | undefined =>
+const groupWantsUser = (newUser: UserId, group: Group, data: Record<UserId, Prefs>): boolean =>
   group
     .map((member) => {
       const replaced = [...group.filter((id) => id != member), newUser]
@@ -126,9 +127,20 @@ const groupWantsUser = (newUser: UserId, group: Group, data: Record<UserId, Pref
         rank: group.reduce((score, member) => score + compareGroupsByPreference(data[member], replaced, group), 0),
       }
     })
+    .some(({ rank }) => rank < 0)
+
+const groupLessWantedUser = (newUser: UserId, group: Group, data: Record<UserId, Prefs>): UserId | undefined =>
+  group
+    .map((member) => {
+      const replaced = [...group.filter((id) => id != member), newUser]
+      return {
+        member,
+        rank: group.reduce((score, member) => score + compareGroupsByPreference(data[member], replaced, group), 0),
+      }
+    })
     .filter(({ rank }) => rank < 0)
     .sort(({ rank }, { rank: otherRank }) => rank - otherRank)
-    ?.at(0)?.replaced
+    ?.at(0)?.member
 
 /**
  * Compares group to be sorted from most to least liked
@@ -179,7 +191,11 @@ const getGroups = (initial: Record<GroupId, Group>, data: Record<UserId, Prefs>)
           } else if (groupWantsUser(id, groups[groupId], data)) {
             return {
               ...groups,
-              [groupId]: balanceGender(groupWantsUser(id, groups[groupId], data)!, data[id].gender, data),
+              [groupId]: balanceGender(
+                [...without(groups[groupId], groupLessWantedUser(id, groups[groupId], data)!), id],
+                data[id].gender,
+                data
+              ),
             }
           } else {
             return groups
