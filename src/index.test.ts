@@ -49,7 +49,7 @@ test("Should have enough wanted", () => {
 test("Should have all users", () => {
   range(10).forEach(() => {
     const groupedUsers = Object.values(getGroupsIterations(10, data)).flat()
-    expect(groupedUsers.length).toBe(Object.keys(data).length)
+    expect(groupedUsers.sort()).toEqual(Object.keys(data).sort())
   })
 })
 
