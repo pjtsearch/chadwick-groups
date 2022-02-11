@@ -96,14 +96,13 @@ const getGroupScore = (group: Group, member: UserId, data: Record<UserId, Prefs>
  * @returns The group with the correct number of a gender
  */
 const balanceGender = (group: Group, gender: Gender, data: Record<UserId, Prefs>): Group => {
-  let curr = group
-  while (curr.filter(isGender(gender, data)).length > Math.floor(GROUP_SIZE / 2)) {
-    const leastWanted = curr
+  if (group.filter(isGender(gender, data)).length > Math.floor(GROUP_SIZE / 2)) {
+    const leastWanted = group
       .filter(isGender(gender, data))
       .sort((member, otherMember) => getGroupScore(group, member, data) - getGroupScore(group, otherMember, data))
-    curr = without(curr, leastWanted[0])
+    return balanceGender(without(group, leastWanted[0]), gender, data)
   }
-  return curr
+  return group
 }
 
 /**
