@@ -614,6 +614,13 @@
     jest-diff "^27.0.0"
     pretty-format "^27.0.0"
 
+"@types/lodash.flow@^3.5.6":
+  version "3.5.6"
+  resolved "https://registry.yarnpkg.com/@types/lodash.flow/-/lodash.flow-3.5.6.tgz#ecbdae376e610313ac6361430f2f59a8dc9a813f"
+  integrity sha512-mpSgC8s1alwO8I5223G//0vSt1BTR395TdxbkprAUgedRaW71Ew9ajSIjk9hsSpWxGki6ExPDnI3zKeJjyeHwQ==
+  dependencies:
+    "@types/lodash" "*"
+
 "@types/lodash.range@^3.2.6":
   version "3.2.6"
   resolved "https://registry.yarnpkg.com/@types/lodash.range/-/lodash.range-3.2.6.tgz#82e0afe2cbc77698a57a21b9f14cfd22cf547e9f"
@@ -1949,6 +1956,11 @@ locate-path@^5.0.0:
   integrity sha512-t7hw9pI+WvuwNJXwk5zVHpyhIqzg2qTlklJOf0mVxGSbe3Fp2VieZcduNYjaLDoy6p9uGpQEGWG87WpMKlNq8g==
   dependencies:
     p-locate "^4.1.0"
+
+lodash.flow@^3.5.0:
+  version "3.5.0"
+  resolved "https://registry.yarnpkg.com/lodash.flow/-/lodash.flow-3.5.0.tgz#87bf40292b8cf83e4e8ce1a3ae4209e20071675a"
+  integrity sha1-h79AKSuM+D5OjOGjrkIJ4gBxZ1o=
 
 lodash.memoize@4.x:
   version "4.1.2"

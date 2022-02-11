@@ -1,3 +1,4 @@
+import flow from "lodash.flow"
 import range from "lodash.range"
 import shuffle from "lodash.shuffle"
 import without from "lodash.without"
@@ -83,13 +84,7 @@ export const getUnwantedAmount = (groups: Record<GroupId, Group>, data: Record<U
  */
 const getGroupScore = (group: Group, member: UserId, data: Record<UserId, Prefs>): number =>
   group.reduce(
-    (score, otherMember) =>
-      score +
-      compareGroupsByPreference(
-        data[otherMember],
-        without(group, member),
-        group
-      ),
+    (score, otherMember) => score + compareGroupsByPreference(data[otherMember], without(group, member), group),
     0
   )
 
@@ -214,60 +209,48 @@ const getGroups = (initial: Record<GroupId, Group>, data: Record<UserId, Prefs>)
  * @returns The group with unused users added
  */
 const withUnusedUsers = (initial: Record<GroupId, Group>, data: Record<UserId, Prefs>): Record<GroupId, Group> => {
-  const addUsersWithConstraints = (
-    initial: Record<GroupId, Group>,
-    constraints: (group: Group, userId: UserId) => boolean
-  ) =>
-    getUnusedUsers(initial, data).reduce(
-      (groups, userId) =>
-        sortGroupsByLength(groups).reduce((groups, groupId) => {
-          if (Object.values(groups).flat().includes(userId)) {
-            return groups
-          } else if (constraints(groups[groupId], userId)) {
-            return { ...groups, [groupId]: [...groups[groupId], userId] }
-          } else {
-            return groups
-          }
-        }, groups),
-      initial
-    )
+  const addUsersWithConstraints =
+    (constraints: (group: Group, userId: UserId) => boolean) => (initial: Record<GroupId, Group>) =>
+      getUnusedUsers(initial, data).reduce(
+        (groups, userId) =>
+          sortGroupsByLength(groups).reduce((groups, groupId) => {
+            if (Object.values(groups).flat().includes(userId)) {
+              return groups
+            } else if (constraints(groups[groupId], userId)) {
+              return { ...groups, [groupId]: [...groups[groupId], userId] }
+            } else {
+              return groups
+            }
+          }, groups),
+        initial
+      )
 
-  const groupsWithoutConflict = addUsersWithConstraints(
-    initial,
-    (group, userId) =>
-      group.length < GROUP_SIZE &&
-      group.every((member) => !data[member].unwanted.includes(userId)) &&
-      group.every((member) => !data[userId].unwanted.includes(member)) &&
-      group.filter(isGender(data[userId].gender, data)).length < Math.floor(GROUP_SIZE / 2)
-  )
-  const groupsWithGenderConflict = addUsersWithConstraints(
-    groupsWithoutConflict,
-    (group, userId) =>
-      group.length < GROUP_SIZE &&
-      group.every((member) => !data[member].unwanted.includes(userId)) &&
-      group.every((member) => !data[userId].unwanted.includes(member))
-  )
-  const groupsWithLengthConflict = addUsersWithConstraints(
-    groupsWithGenderConflict,
-    (group, userId) =>
-      group.every((member) => !data[member].unwanted.includes(userId)) &&
-      group.every((member) => !data[userId].unwanted.includes(member))
-  )
-  const groupsWithWantedConflict = addUsersWithConstraints(groupsWithLengthConflict, (group, userId) =>
-    group.every((member) => !data[userId].unwanted.includes(member))
-  )
-  const groupsWithSelfWantedConflict = addUsersWithConstraints(groupsWithWantedConflict, (_group, _userId) => true)
-  // console.log({
-  //   initial,
-  //   groupsWithoutConflict,
-  //   groupsWithGenderConflict,
-  //   groupsWithLengthConflict,
-  //   sortedGroups: Object.entries(initial)
-  //     .sort(([_id, group], [_otherId, otherGroup]) => group.length - otherGroup.length)
-  //     .filter(([_id, g]) => g.length > 0)
-  //     .map(([id]) => id),
-  // })
-  return groupsWithSelfWantedConflict
+  return flow(
+    // Without conflict
+    addUsersWithConstraints(
+      (group, userId) =>
+        group.length < GROUP_SIZE &&
+        group.every((member) => !data[member].unwanted.includes(userId)) &&
+        group.every((member) => !data[userId].unwanted.includes(member)) &&
+        group.filter(isGender(data[userId].gender, data)).length < Math.floor(GROUP_SIZE / 2)
+    ),
+    // With gender conflict
+    addUsersWithConstraints(
+      (group, userId) =>
+        group.length < GROUP_SIZE &&
+        group.every((member) => !data[member].unwanted.includes(userId)) &&
+        group.every((member) => !data[userId].unwanted.includes(member))
+    ),
+    // With length conflict
+    addUsersWithConstraints(
+      (group, userId) =>
+        group.every((member) => !data[member].unwanted.includes(userId)) &&
+        group.every((member) => !data[userId].unwanted.includes(member))
+    ),
+    // Wanted conflict
+    addUsersWithConstraints((group, userId) => group.every((member) => !data[userId].unwanted.includes(member))),
+    addUsersWithConstraints((_group, _userId) => true)
+  )(initial)
 }
 
 /**
