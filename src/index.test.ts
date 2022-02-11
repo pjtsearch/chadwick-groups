@@ -1,5 +1,4 @@
-import { assertEquals } from "https://deno.land/std@0.125.0/testing/asserts.ts"
-import { getGroupsIterations, getWantedAmount, Prefs, UserId } from "./index.ts"
+import { getGroupsIterations, getWantedAmount, Prefs, UserId } from "./"
 
 const data: Record<UserId, Prefs> = {
   a: { wanted: ["b", "c", "d", "z", "q", "w"], unwanted: ["e", "j"], gender: "male" },
@@ -30,34 +29,25 @@ const data: Record<UserId, Prefs> = {
   z: { wanted: ["t", "n", "q", "m", "a", "b"], unwanted: ["l", "o"], gender: "female" },
 }
 
-Deno.test({
-  name: "Should have no unwanted",
-  fn() {
-    [...new Array(10).keys()].forEach(() => {
-      const unwanted = Object.values(getGroupsIterations(5, data)).flatMap((group) =>
-        group.filter((user) => group.some((otherUser) => data[user].unwanted.includes(otherUser)))
-      )
-      assertEquals(unwanted.length, 0)
-    })
-  },
+test("Should have no unwanted", () => {
+  ;[...new Array(10).keys()].forEach(() => {
+    const unwanted = Object.values(getGroupsIterations(5, data)).flatMap((group) =>
+      group.filter((user) => group.some((otherUser) => data[user].unwanted.includes(otherUser)))
+    )
+    expect(unwanted.length).toBe(0)
+  })
 })
 
-Deno.test({
-  name: "Should have enough wanted",
-  fn() {
-    [...new Array(10).keys()].forEach(() => {
-      const res = getGroupsIterations(10, data)
-      assertEquals(getWantedAmount(res, data) >= Object.values(res).flat().length / 1.2, true)
-    })
-  },
+test("Should have enough wanted", () => {
+  ;[...new Array(10).keys()].forEach(() => {
+    const res = getGroupsIterations(10, data)
+    expect(getWantedAmount(res, data)).toBeGreaterThanOrEqual(Object.values(res).flat().length / 1.2)
+  })
 })
 
-Deno.test({
-  name: "Should have all users",
-  fn() {
-    [...new Array(100).keys()].forEach(() => {
-      const groupedUsers = Object.values(getGroupsIterations(100, data)).flat()
-      assertEquals(groupedUsers.length, Object.keys(data).length)
-    })
-  },
+test("Should have all users", () => {
+  ;[...new Array(10).keys()].forEach(() => {
+    const groupedUsers = Object.values(getGroupsIterations(10, data)).flat()
+    expect(groupedUsers.length).toBe(Object.keys(data).length)
+  })
 })
