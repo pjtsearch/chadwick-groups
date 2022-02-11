@@ -106,11 +106,11 @@ const balanceGender = (group: Group, gender: Gender, data: Record<UserId, Prefs>
 }
 
 /**
- * Gets the group with the new user replacing another user if the other user is less wanted
+ * Gets if a new user is wanted more than any other user
  * @param newUser The new user
  * @param group The group to check
  * @param data The preference data
- * @returns The group with the new user added if they should be, or undefined
+ * @returns If a new user is wanted more than any other user
  */
 const groupWantsUser = (newUser: UserId, group: Group, data: Record<UserId, Prefs>): boolean =>
   group
@@ -120,6 +120,14 @@ const groupWantsUser = (newUser: UserId, group: Group, data: Record<UserId, Pref
     })
     .some((rank) => rank < 0)
 
+
+/**
+ * Gets the user who is less wanted than a new user or undefined if there isn't one
+ * @param newUser The new user
+ * @param group The group to check
+ * @param data The preference data
+ * @returns The user who is less wanted than a new user or undefined if there isn't one
+ */
 const groupLessWantedUser = (newUser: UserId, group: Group, data: Record<UserId, Prefs>): UserId | undefined =>
   group
     .map((member) => {
