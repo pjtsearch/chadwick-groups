@@ -1,3 +1,4 @@
+import range from "lodash.range"
 import shuffle from "lodash.shuffle"
 
 export type Gender = "male" | "female"
@@ -279,7 +280,7 @@ export const getGroupsIterations = (
     "13": [],
   }
 ) =>
-  [...new Array(iterations).keys()].reduce((prev) => {
+  range(iterations).reduce((prev) => {
     const curr = getGroups(initial, data)
 
     // Only add unwanted to groups on later loops

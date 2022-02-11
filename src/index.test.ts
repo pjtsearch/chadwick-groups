@@ -1,3 +1,4 @@
+import range from "lodash.range"
 import { getGroupsIterations, getWantedAmount, Prefs, UserId } from "./"
 
 const data: Record<UserId, Prefs> = {
@@ -30,7 +31,7 @@ const data: Record<UserId, Prefs> = {
 }
 
 test("Should have no unwanted", () => {
-  ;[...new Array(10).keys()].forEach(() => {
+  range(10).forEach(() => {
     const unwanted = Object.values(getGroupsIterations(5, data)).flatMap((group) =>
       group.filter((user) => group.some((otherUser) => data[user].unwanted.includes(otherUser)))
     )
@@ -39,14 +40,14 @@ test("Should have no unwanted", () => {
 })
 
 test("Should have enough wanted", () => {
-  ;[...new Array(10).keys()].forEach(() => {
+  range(10).forEach(() => {
     const res = getGroupsIterations(10, data)
     expect(getWantedAmount(res, data)).toBeGreaterThanOrEqual(Object.values(res).flat().length / 1.2)
   })
 })
 
 test("Should have all users", () => {
-  ;[...new Array(10).keys()].forEach(() => {
+  range(10).forEach(() => {
     const groupedUsers = Object.values(getGroupsIterations(10, data)).flat()
     expect(groupedUsers.length).toBe(Object.keys(data).length)
   })
