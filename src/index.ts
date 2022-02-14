@@ -82,8 +82,8 @@ export const getUnwantedAmount = (groups: Record<GroupId, Group>, data: Record<U
  * @param data The preference data
  * @returns How much other users prefer a group without this member compared to one with them
  */
-const getGroupScore = (group: Group, member: UserId, data: Record<UserId, Prefs>): number =>
-  group.reduce(
+export const getGroupScore = (group: Group, member: UserId, data: Record<UserId, Prefs>): number =>
+  without(group, member).reduce(
     (score, otherMember) => score + compareGroupsByPreference(data[otherMember], without(group, member), group),
     0
   )
