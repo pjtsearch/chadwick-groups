@@ -95,7 +95,7 @@ export const getGroupScore = (group: Group, member: UserId, data: Record<UserId,
  * @param data The preference data
  * @returns The group with the correct number of a gender
  */
-const balanceGender = (group: Group, gender: Gender, data: Record<UserId, Prefs>): Group => {
+export const balanceGender = (group: Group, gender: Gender, data: Record<UserId, Prefs>): Group => {
   if (group.filter(isGender(gender, data)).length > Math.floor(GROUP_SIZE / 2)) {
     const leastWanted = group
       .filter(isGender(gender, data))
