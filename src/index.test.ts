@@ -1,5 +1,5 @@
 import range from "lodash.range"
-import { getGroupsIterations, getWantedAmount, GROUP_SIZE, Prefs, UserId } from "./"
+import { getGroupScore, getGroupsIterations, getUnwantedAmount, getWantedAmount, GROUP_SIZE, Prefs, UserId } from "./"
 
 const data: Record<UserId, Prefs> = {
   a: { wanted: ["b", "c", "d", "z", "q", "w"], unwanted: ["e", "j"], gender: "male" },
@@ -62,4 +62,32 @@ test("Should have gender balance", () => {
     const avgDiff = difference.reduce((total, curr) => total + curr, 0) / groupsGenders.length
     expect(avgDiff).toBeLessThanOrEqual(1)
   })
+})
+
+test("Should get wanted amount", () => {
+  expect(
+    getWantedAmount(
+      {
+        a: ["a", "b", "c"],
+      },
+      data
+    )
+  ).toBe(2)
+})
+
+test("Should get unwanted amount", () => {
+  expect(
+    getUnwantedAmount(
+      {
+        a: ["a", "b", "c"],
+      },
+      data
+    )
+  ).toBe(2)
+})
+
+test("Should get correct group score", () => {
+  expect(getGroupScore(["a", "b", "c"], "b", data)).toBe(-2012)
+  expect(getGroupScore(["a", "b", "c"], "a", data)).toBe(-1982)
+  expect(getGroupScore(["a", "b", "c"], "c", data)).toBe(-2012)
 })
