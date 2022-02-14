@@ -42,9 +42,13 @@ export type Group = UserId[]
 export type GroupId = string
 
 /**
- * The desired size of a group
+ * Options for group creating
  */
-export const GROUP_SIZE = 4
+export type Options = {
+  groupSize: number,
+  initial: Record<GroupId, Group>,
+  data: Record<UserId, Prefs>
+}
 
 /**
  * Returns function that finds if another user is unwanted by certain prefs
@@ -66,7 +70,7 @@ const isWanted = (byPrefs: Prefs) => (user: UserId) => byPrefs.wanted.includes(u
  * @param data The data to find genders with
  * @returns A function that returns whether a user is of a certain gender
  */
-const isGender = (gender: Gender, data: Record<UserId, Prefs>) => (user: UserId) => data[user].gender == gender
+const isGender = (gender: Gender, {data}: Options) => (user: UserId) => data[user].gender == gender
 
 /**
  * Gets the unused users in a set of groups
@@ -94,7 +98,7 @@ const sortGroupsByLength = (groups: Record<GroupId, Group>) =>
  * @param data The preference data
  * @returns The amount of users that have people have people they want in their group
  */
-export const getWantedAmount = (groups: Record<GroupId, Group>, data: Record<UserId, Prefs>) =>
+export const getWantedAmount = (groups: Record<GroupId, Group>, {data}: Options) =>
   Object.values(groups).flatMap((group) => group.filter((user) => group.some(isWanted(data[user])))).length
 
 /**
@@ -103,7 +107,7 @@ export const getWantedAmount = (groups: Record<GroupId, Group>, data: Record<Use
  * @param data The preference data
  * @returns The amount of users that have people have people they want in their group
  */
-export const getUnwantedAmount = (groups: Record<GroupId, Group>, data: Record<UserId, Prefs>) =>
+export const getUnwantedAmount = (groups: Record<GroupId, Group>, {data}: Options) =>
   Object.values(groups).flatMap((group) =>
     group.filter((user) => group.some((otherUser) => data[user].unwanted.includes(otherUser)))
   ).length
@@ -117,7 +121,7 @@ export const getUnwantedAmount = (groups: Record<GroupId, Group>, data: Record<U
  * @param data The preference data
  * @returns How much other users prefer a group without this member compared to one with them
  */
-export const getGroupScore = (group: Group, member: UserId, data: Record<UserId, Prefs>): number =>
+export const getGroupScore = (group: Group, member: UserId, {data}: Options): number =>
   without(group, member).reduce(
     (score, otherMember) => score + compareGroupsByPreference(data[otherMember], without(group, member), group),
     0
@@ -130,12 +134,12 @@ export const getGroupScore = (group: Group, member: UserId, data: Record<UserId,
  * @param data The preference data
  * @returns The group with the correct number of a gender
  */
-export const balanceGender = (group: Group, gender: Gender, data: Record<UserId, Prefs>): Group => {
-  if (group.filter(isGender(gender, data)).length > Math.floor(GROUP_SIZE / 2)) {
+export const balanceGender = (group: Group, gender: Gender, options: Options): Group => {
+  if (group.filter(isGender(gender, options)).length > Math.floor(options.groupSize / 2)) {
     const leastWanted = group
-      .filter(isGender(gender, data))
-      .sort((member, otherMember) => getGroupScore(group, member, data) - getGroupScore(group, otherMember, data))
-    return balanceGender(without(group, leastWanted[0]), gender, data)
+      .filter(isGender(gender, options))
+      .sort((member, otherMember) => getGroupScore(group, member, options) - getGroupScore(group, otherMember, options))
+    return balanceGender(without(group, leastWanted[0]), gender, options)
   }
   return group
 }
@@ -147,7 +151,7 @@ export const balanceGender = (group: Group, gender: Gender, data: Record<UserId,
  * @param data The preference data
  * @returns If a new user is wanted more than any other user
  */
-export const groupWantsUser = (newUser: UserId, group: Group, data: Record<UserId, Prefs>): boolean =>
+export const groupWantsUser = (newUser: UserId, group: Group, {data}: Options): boolean =>
   group
     .map((member) => {
       const replaced = [...without(group, member), newUser]
@@ -163,7 +167,7 @@ export const groupWantsUser = (newUser: UserId, group: Group, data: Record<UserI
  * @param data The preference data
  * @returns The user who is less wanted than a new user or undefined if there isn't one
  */
-export const groupLessWantedUser = (newUser: UserId, group: Group, data: Record<UserId, Prefs>): UserId | undefined =>
+export const groupLessWantedUser = (newUser: UserId, group: Group, {data}: Options): UserId | undefined =>
   group
     .map((member) => {
       const replaced = [...without(group, member), newUser]
@@ -210,7 +214,7 @@ const sortGroupsByPreference = (prefs: Prefs, groups: Record<GroupId, Group>) =>
  * @param data The preference data
  * @returns Groups with all users
  */
-const getGroups = (initial: Record<GroupId, Group>, data: Record<UserId, Prefs>) =>
+const getGroups = (initial: Record<GroupId, Group>, options: Options) =>
   flow(
     Object.entries,
     shuffle,
@@ -221,17 +225,17 @@ const getGroups = (initial: Record<GroupId, Group>, data: Record<UserId, Prefs>)
             if (Object.values(groups).some((group) => group.includes(id))) {
               return groups
             } else if (
-              groups[groupId].length < GROUP_SIZE &&
-              groups[groupId].every((member) => !data[member].unwanted.includes(id))
+              groups[groupId].length < options.groupSize &&
+              groups[groupId].every((member) => !options.data[member].unwanted.includes(id))
             ) {
-              return { ...groups, [groupId]: balanceGender([...groups[groupId], id], data[id].gender, data) }
-            } else if (groupWantsUser(id, groups[groupId], data)) {
+              return { ...groups, [groupId]: balanceGender([...groups[groupId], id], options.data[id].gender, options) }
+            } else if (groupWantsUser(id, groups[groupId], options)) {
               return {
                 ...groups,
                 [groupId]: balanceGender(
-                  [...without(groups[groupId], groupLessWantedUser(id, groups[groupId], data)!), id],
-                  data[id].gender,
-                  data
+                  [...without(groups[groupId], groupLessWantedUser(id, groups[groupId], options)!), id],
+                  options.data[id].gender,
+                  options
                 ),
               }
             } else {
@@ -240,8 +244,8 @@ const getGroups = (initial: Record<GroupId, Group>, data: Record<UserId, Prefs>)
           }, groups),
         initial
       ),
-    withUnusedUsers(data)
-  )(data)
+    withUnusedUsers(options)
+  )(options.data)
   // withUnusedUsers(
   //   shuffle(Object.entries(data)).reduce(
   //     (groups, [id, prefs]) =>
@@ -279,11 +283,11 @@ const getGroups = (initial: Record<GroupId, Group>, data: Record<UserId, Prefs>)
  * @returns The group with unused users added
  */
 export const withUnusedUsers =
-  (data: Record<UserId, Prefs>) =>
+  (options: Options) =>
   (initial: Record<GroupId, Group>): Record<GroupId, Group> => {
     const addUsersWithConstraints =
       (constraints: (group: Group, userId: UserId) => boolean) => (initial: Record<GroupId, Group>) =>
-        getUnusedUsers(initial, data).reduce(
+        getUnusedUsers(initial, options.data).reduce(
           (groups, userId) =>
             sortGroupsByLength(groups).reduce((groups, groupId) => {
               if (Object.values(groups).flat().includes(userId)) {
@@ -301,26 +305,26 @@ export const withUnusedUsers =
       // Without conflict
       addUsersWithConstraints(
         (group, userId) =>
-          group.length < GROUP_SIZE &&
-          group.every((member) => !data[member].unwanted.includes(userId)) &&
-          group.every((member) => !data[userId].unwanted.includes(member)) &&
-          group.filter(isGender(data[userId].gender, data)).length < Math.floor(GROUP_SIZE / 2)
+          group.length < options.groupSize &&
+          group.every((member) => !options.data[member].unwanted.includes(userId)) &&
+          group.every((member) => !options.data[userId].unwanted.includes(member)) &&
+          group.filter(isGender(options.data[userId].gender, options)).length < Math.floor(options.groupSize / 2)
       ),
       // With gender conflict
       addUsersWithConstraints(
         (group, userId) =>
-          group.length < GROUP_SIZE &&
-          group.every((member) => !data[member].unwanted.includes(userId)) &&
-          group.every((member) => !data[userId].unwanted.includes(member))
+          group.length < options.groupSize &&
+          group.every((member) => !options.data[member].unwanted.includes(userId)) &&
+          group.every((member) => !options.data[userId].unwanted.includes(member))
       ),
       // With length conflict
       addUsersWithConstraints(
         (group, userId) =>
-          group.every((member) => !data[member].unwanted.includes(userId)) &&
-          group.every((member) => !data[userId].unwanted.includes(member))
+          group.every((member) => !options.data[member].unwanted.includes(userId)) &&
+          group.every((member) => !options.data[userId].unwanted.includes(member))
       ),
       // Wanted conflict
-      addUsersWithConstraints((group, userId) => group.every((member) => !data[userId].unwanted.includes(member))),
+      addUsersWithConstraints((group, userId) => group.every((member) => !options.data[userId].unwanted.includes(member))),
       addUsersWithConstraints((_group, _userId) => true)
     )(initial)
   }
@@ -334,34 +338,19 @@ export const withUnusedUsers =
  */
 export const getGroupsIterations = (
   iterations: number,
-  data: Record<UserId, Prefs>,
-  initial: Record<GroupId, Group> = {
-    "1": [],
-    "2": [],
-    "3": [],
-    "4": [],
-    "5": [],
-    "6": [],
-    "7": [],
-    "8": [],
-    "9": [],
-    "10": [],
-    "11": [],
-    "12": [],
-    "13": [],
-  }
+  options: Options
 ) =>
   range(iterations).reduce((prev) => {
-    const curr = getGroups(initial, data)
+    const curr = getGroups(options.initial, options)
 
     // Only add unwanted to groups on later loops
 
     // console.log(Object.values(curr).map((g) => g.map((u) => [u, data[u].gender])))
-    return getUnwantedAmount(curr, data) <= getUnwantedAmount(prev, data) &&
-      getWantedAmount(curr, data) > getWantedAmount(prev, data)
+    return getUnwantedAmount(curr, options) <= getUnwantedAmount(prev, options) &&
+      getWantedAmount(curr, options) > getWantedAmount(prev, options)
       ? curr
       : prev
-  }, initial)
+  }, options.initial)
 
 // if (
 //   Object.values(groups).some((group) =>
