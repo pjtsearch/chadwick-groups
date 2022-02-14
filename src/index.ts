@@ -112,7 +112,7 @@ export const balanceGender = (group: Group, gender: Gender, data: Record<UserId,
  * @param data The preference data
  * @returns If a new user is wanted more than any other user
  */
-const groupWantsUser = (newUser: UserId, group: Group, data: Record<UserId, Prefs>): boolean =>
+export const groupWantsUser = (newUser: UserId, group: Group, data: Record<UserId, Prefs>): boolean =>
   group
     .map((member) => {
       const replaced = [...without(group, member), newUser]
@@ -128,7 +128,7 @@ const groupWantsUser = (newUser: UserId, group: Group, data: Record<UserId, Pref
  * @param data The preference data
  * @returns The user who is less wanted than a new user or undefined if there isn't one
  */
-const groupLessWantedUser = (newUser: UserId, group: Group, data: Record<UserId, Prefs>): UserId | undefined =>
+export const groupLessWantedUser = (newUser: UserId, group: Group, data: Record<UserId, Prefs>): UserId | undefined =>
   group
     .map((member) => {
       const replaced = [...without(group, member), newUser]
