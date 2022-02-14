@@ -11,6 +11,7 @@ import {
   GROUP_SIZE,
   Prefs,
   UserId,
+  withUnusedUsers,
 } from "./"
 
 const data: Record<UserId, Prefs> = {
@@ -98,4 +99,40 @@ test("Should compare groups by preference", () => {
       ["a", "e", "d"]
     )
   ).toBe(-1988)
+})
+
+test("Should add unused users", () => {
+  expect(
+    withUnusedUsers({
+      a: { unwanted: ["b"], wanted: [], gender: "male" },
+      b: { unwanted: [], wanted: [], gender: "female" },
+      c: { unwanted: ["d"], wanted: [], gender: "male" },
+      d: { unwanted: [], wanted: [], gender: "female" },
+    })({
+      a: ["a"],
+      b: ["b"],
+    })
+  ).toEqual({
+    a: ["a", "c"],
+    b: ["b", "d"],
+  })
+
+  expect(
+    withUnusedUsers({
+      a: { unwanted: ["b"], wanted: [], gender: "male" },
+      b: { unwanted: [], wanted: [], gender: "female" },
+      c: { unwanted: ["d"], wanted: [], gender: "male" },
+      d: { unwanted: [], wanted: [], gender: "female" },
+      e: { unwanted: ["a"], wanted: [], gender: "male" },
+      f: { unwanted: [], wanted: [], gender: "female" },
+      g: { unwanted: ["c"], wanted: [], gender: "male" },
+      h: { unwanted: [], wanted: [], gender: "female" },
+    })({
+      a: ["a"],
+      b: ["b"],
+    })
+  ).toEqual({
+    a: ["a", "c", "f", "h"],
+    b: ["b", "d", "e", "g"],
+  })
 })

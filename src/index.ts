@@ -243,50 +243,52 @@ const getGroups = (initial: Record<GroupId, Group>, data: Record<UserId, Prefs>)
  * @param data The preference data
  * @returns The group with unused users added
  */
-const withUnusedUsers = (data: Record<UserId, Prefs>) => (initial: Record<GroupId, Group>): Record<GroupId, Group> => {
-  const addUsersWithConstraints =
-    (constraints: (group: Group, userId: UserId) => boolean) => (initial: Record<GroupId, Group>) =>
-      getUnusedUsers(initial, data).reduce(
-        (groups, userId) =>
-          sortGroupsByLength(groups).reduce((groups, groupId) => {
-            if (Object.values(groups).flat().includes(userId)) {
-              return groups
-            } else if (constraints(groups[groupId], userId)) {
-              return { ...groups, [groupId]: [...groups[groupId], userId] }
-            } else {
-              return groups
-            }
-          }, groups),
-        initial
-      )
+export const withUnusedUsers =
+  (data: Record<UserId, Prefs>) =>
+  (initial: Record<GroupId, Group>): Record<GroupId, Group> => {
+    const addUsersWithConstraints =
+      (constraints: (group: Group, userId: UserId) => boolean) => (initial: Record<GroupId, Group>) =>
+        getUnusedUsers(initial, data).reduce(
+          (groups, userId) =>
+            sortGroupsByLength(groups).reduce((groups, groupId) => {
+              if (Object.values(groups).flat().includes(userId)) {
+                return groups
+              } else if (constraints(groups[groupId], userId)) {
+                return { ...groups, [groupId]: [...groups[groupId], userId] }
+              } else {
+                return groups
+              }
+            }, groups),
+          initial
+        )
 
-  return flow(
-    // Without conflict
-    addUsersWithConstraints(
-      (group, userId) =>
-        group.length < GROUP_SIZE &&
-        group.every((member) => !data[member].unwanted.includes(userId)) &&
-        group.every((member) => !data[userId].unwanted.includes(member)) &&
-        group.filter(isGender(data[userId].gender, data)).length < Math.floor(GROUP_SIZE / 2)
-    ),
-    // With gender conflict
-    addUsersWithConstraints(
-      (group, userId) =>
-        group.length < GROUP_SIZE &&
-        group.every((member) => !data[member].unwanted.includes(userId)) &&
-        group.every((member) => !data[userId].unwanted.includes(member))
-    ),
-    // With length conflict
-    addUsersWithConstraints(
-      (group, userId) =>
-        group.every((member) => !data[member].unwanted.includes(userId)) &&
-        group.every((member) => !data[userId].unwanted.includes(member))
-    ),
-    // Wanted conflict
-    addUsersWithConstraints((group, userId) => group.every((member) => !data[userId].unwanted.includes(member))),
-    addUsersWithConstraints((_group, _userId) => true)
-  )(initial)
-}
+    return flow(
+      // Without conflict
+      addUsersWithConstraints(
+        (group, userId) =>
+          group.length < GROUP_SIZE &&
+          group.every((member) => !data[member].unwanted.includes(userId)) &&
+          group.every((member) => !data[userId].unwanted.includes(member)) &&
+          group.filter(isGender(data[userId].gender, data)).length < Math.floor(GROUP_SIZE / 2)
+      ),
+      // With gender conflict
+      addUsersWithConstraints(
+        (group, userId) =>
+          group.length < GROUP_SIZE &&
+          group.every((member) => !data[member].unwanted.includes(userId)) &&
+          group.every((member) => !data[userId].unwanted.includes(member))
+      ),
+      // With length conflict
+      addUsersWithConstraints(
+        (group, userId) =>
+          group.every((member) => !data[member].unwanted.includes(userId)) &&
+          group.every((member) => !data[userId].unwanted.includes(member))
+      ),
+      // Wanted conflict
+      addUsersWithConstraints((group, userId) => group.every((member) => !data[userId].unwanted.includes(member))),
+      addUsersWithConstraints((_group, _userId) => true)
+    )(initial)
+  }
 
 /**
  * Tries multiple iterations to find groups with the most people having at least one wanted
