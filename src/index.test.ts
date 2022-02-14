@@ -77,6 +77,48 @@ test("Should have gender balance", () => {
   })
 })
 
+test("Should get wanted amount", () => {
+  expect(
+    getWantedAmount(
+      {
+        a: ["a", "b", "c"],
+      },
+      data
+    )
+  ).toBe(2)
+})
+
+test("Should get unwanted amount", () => {
+  expect(
+    getUnwantedAmount(
+      {
+        a: ["a", "b", "c"],
+      },
+      data
+    )
+  ).toBe(2)
+})
+
+test("Should get correct group score", () => {
+  expect(getGroupScore(["a", "b", "c"], "b", data)).toBe(-2012)
+  expect(getGroupScore(["a", "b", "c"], "a", data)).toBe(-1982)
+  expect(getGroupScore(["a", "b", "c"], "c", data)).toBe(-2012)
+})
+
+test("Should balance gender", () => {
+  expect(balanceGender(["a", "b", "c"], "female", data)).toEqual(["a", "b", "c"])
+  expect(balanceGender(["a", "b", "c"], "male", data)).toEqual(["a", "c"])
+})
+
+test("Should get if group wants user", () => {
+  expect(groupWantsUser("f", ["a", "b", "c"], data)).toBe(true)
+  expect(groupLessWantedUser("f", ["a", "b", "c"], data)).toBe("b")
+  expect(groupWantsUser("d", ["a", "b", "c"], data)).toBe(true)
+  expect(groupLessWantedUser("d", ["a", "b", "c"], data)).toBe("a")
+  expect(groupWantsUser("e", ["a", "b", "c"], data)).toBe(true)
+  expect(groupLessWantedUser("e", ["a", "b", "c"], data)).toBe("a")
+})
+
 test("Should compare groups by preference", () => {
   expect(
     compareGroupsByPreference(
