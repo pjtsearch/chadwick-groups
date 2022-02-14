@@ -3,12 +3,47 @@ import range from "lodash.range"
 import shuffle from "lodash.shuffle"
 import without from "lodash.without"
 
+/**
+ * Type for gender
+ */
 export type Gender = "male" | "female"
+
+/**
+ * Type for user id
+ */
 export type UserId = string
-export type Prefs = { wanted: UserId[]; unwanted: UserId[]; gender: Gender }
+
+/**
+ * Type for user data
+ */
+export type Prefs = { 
+  /**
+   * Users that are wanted to be in a group with
+   */
+  wanted: UserId[];
+  /**
+   * Users that are not wanted to be in a group with
+   */
+  unwanted: UserId[];
+  /**
+   * The gender of the user
+   */
+  gender: Gender
+}
+
+/**
+ * Type for a group of users
+ */
 export type Group = UserId[]
+
+/**
+ * Type for the id of a group
+ */
 export type GroupId = string
 
+/**
+ * The desired size of a group
+ */
 export const GROUP_SIZE = 4
 
 /**
