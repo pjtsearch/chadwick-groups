@@ -1,6 +1,7 @@
 import range from "lodash.range"
 import {
   balanceGender,
+  compareGroupsByPreference,
   getGroupScore,
   getGroupsIterations,
   getUnwantedAmount,
@@ -75,33 +76,26 @@ test("Should have gender balance", () => {
   })
 })
 
-test("Should get wanted amount", () => {
+test("Should compare groups by preference", () => {
   expect(
-    getWantedAmount(
-      {
-        a: ["a", "b", "c"],
-      },
-      data
+    compareGroupsByPreference(
+      { wanted: ["a", "b", "c"], unwanted: ["d", "e", "f"], gender: "male" },
+      ["a", "b", "d"],
+      ["a", "b", "e"]
     )
-  ).toBe(2)
-})
-
-test("Should get unwanted amount", () => {
+  ).toBe(0)
   expect(
-    getUnwantedAmount(
-      {
-        a: ["a", "b", "c"],
-      },
-      data
+    compareGroupsByPreference(
+      { wanted: ["a", "b", "c"], unwanted: ["d", "e", "f"], gender: "male" },
+      ["a", "b", "d"],
+      ["a", "b", "c"]
     )
-  ).toBe(2)
-})
-
-test("Should get if group wants user", () => {
-  expect(groupWantsUser("f", ["a", "b", "c"], data)).toBe(true)
-  expect(groupLessWantedUser("f", ["a", "b", "c"], data)).toBe("b")
-  expect(groupWantsUser("d", ["a", "b", "c"], data)).toBe(true)
-  expect(groupLessWantedUser("d", ["a", "b", "c"], data)).toBe("a")
-  expect(groupWantsUser("e", ["a", "b", "c"], data)).toBe(true)
-  expect(groupLessWantedUser("e", ["a", "b", "c"], data)).toBe("a")
+  ).toBe(1998)
+  expect(
+    compareGroupsByPreference(
+      { wanted: ["a", "b", "c"], unwanted: ["d", "e", "f"], gender: "male" },
+      ["a", "b", "d"],
+      ["a", "e", "d"]
+    )
+  ).toBe(-1988)
 })

@@ -149,7 +149,7 @@ export const groupLessWantedUser = (newUser: UserId, group: Group, data: Record<
  * @returns A negative if the first group is more preferred, 0 if equal,
  * or positive if other group is preferred
  */
-const compareGroupsByPreference = (prefs: Prefs, group: Group, otherGroup: Group) =>
+export const compareGroupsByPreference = (prefs: Prefs, group: Group, otherGroup: Group) =>
   (group.filter(isUnwanted(prefs)).length - otherGroup.filter(isUnwanted(prefs)).length) * 2000 +
   (group.filter(isWanted(prefs)).length > 2 ? 2 : 0) +
   (otherGroup.filter(isWanted(prefs)).length > 2 ? -2 : 0) +
