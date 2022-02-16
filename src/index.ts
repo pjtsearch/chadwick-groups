@@ -210,6 +210,18 @@ const sortGroupsByPreference = (prefs: Prefs, groups: Record<GroupId, Group>) =>
 
 /**
  * Gets the desired groups
+ * 
+ * - Randomizes the users
+ * - Reduces the randomized users to groups starting with the initial groups:
+ *     - In each user, return the current groups sorted by their preference (most preferred to least preferred), reduced by 
+ *         - In each group:
+ *             - Return the old groups if the user is already in a group
+ *             - Add the user to the group if it is below size and the user isn't unwanted by others, then balance gender
+ *             - Add the user to the group if they are more liked than another member ({@link groupWantsUser}),
+ *               then balance gender
+ *             - Otherwise, return the old groups
+ * - Adds the unused users ({@link withUnusedUsers})
+ * 
  * @param initial The initial groups
  * @param data The preference data
  * @returns Groups with all users
@@ -246,38 +258,16 @@ const getGroups = (initial: Record<GroupId, Group>, options: Options) =>
       ),
     withUnusedUsers(options)
   )(options.data)
-  // withUnusedUsers(
-  //   shuffle(Object.entries(data)).reduce(
-  //     (groups, [id, prefs]) =>
-  //       sortGroupsByPreference(prefs, groups).reduce((groups, groupId) => {
-  //         if (Object.values(groups).some((group) => group.includes(id))) {
-  //           return groups
-  //         } else if (
-  //           groups[groupId].length < GROUP_SIZE &&
-  //           groups[groupId].every((member) => !data[member].unwanted.includes(id))
-  //         ) {
-  //           return { ...groups, [groupId]: balanceGender([...groups[groupId], id], data[id].gender, data) }
-  //         } else if (groupWantsUser(id, groups[groupId], data)) {
-  //           return {
-  //             ...groups,
-  //             [groupId]: balanceGender(
-  //               [...without(groups[groupId], groupLessWantedUser(id, groups[groupId], data)!), id],
-  //               data[id].gender,
-  //               data
-  //             ),
-  //           }
-  //         } else {
-  //           return groups
-  //         }
-  //       }, groups),
-  //     initial
-  //   ),
-  //   data
-  // )
 
 /**
- * Adds unused users by first adding without any conflicts, then disregarding gender size,
- * then disregarding group size
+ * Adds unused users
+ * 
+ * 1. Adds unused users to groups sorted by length if there are no unwanted, gender, or size conflicts
+ * 2. Adds unused users to groups sorted by length if there are no unwanted or size conflicts
+ * 3. Adds unused users to groups sorted by length if there are no unwanted conflicts
+ * 4. Adds unused users to groups sorted by length if there are no unwanted conflicts from other users
+ * 5. Adds remaining unused users
+ * 
  * @param initial The initial groups
  * @param data The preference data
  * @returns The group with unused users added
@@ -343,36 +333,8 @@ export const getGroupsIterations = (
   range(iterations).reduce((prev) => {
     const curr = getGroups(options.initial, options)
 
-    // Only add unwanted to groups on later loops
-
-    // console.log(Object.values(curr).map((g) => g.map((u) => [u, data[u].gender])))
     return getUnwantedAmount(curr, options) <= getUnwantedAmount(prev, options) &&
       getWantedAmount(curr, options) > getWantedAmount(prev, options)
       ? curr
       : prev
   }, options.initial)
-
-// if (
-//   Object.values(groups).some((group) =>
-//     group.some((user) => group.some((otherUser) => data[user].unwanted.includes(otherUser)))
-//   )
-// ) {
-//   console.error("Has unwanted")
-// }
-
-// console.log(
-//   Object.values(groups).flatMap((group) =>
-//     group.filter((user) => group.some((otherUser) => data[user].wanted.includes(otherUser)))
-//   ).length
-// )
-
-// if (
-//   Object.values(groups).flatMap((group) =>
-//     group.filter((user) => group.some((otherUser) => data[user].wanted.includes(otherUser)))
-//   ).length <=
-//   Object.keys(data).length / 2
-// ) {
-//   console.error("Not enough wanted")
-// }
-
-// console.log(getGroupsIterations(1000, data))
