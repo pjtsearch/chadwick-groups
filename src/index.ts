@@ -184,8 +184,7 @@ export const groupWantsUser = (newUser: UserId, group: Group, { data }: Options)
   group.users
     .map((member) =>
       // The total compare score of all of the users
-      // TODO: without member?
-      group.users.reduce(
+      without(group.users, member).reduce(
         (score, otherMember) =>
           score +
           compareGroupsByPreference(
