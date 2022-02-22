@@ -155,6 +155,8 @@ export const getGroupScore = (group: Group, member: UserId, { data }: Options): 
 
 /**
  * Gets the group with the correct number of a gender
+ * Removes the least wanted users of a certain gender until they are less than or
+ * equal to half of the desired group size
  * @param group The group to balance
  * @param gender The gender to balance
  * @param data The preference data
@@ -172,6 +174,7 @@ export const balanceGender = (group: Group, gender: Gender, options: Options): G
 
 /**
  * Gets if a new user is wanted more than any other user
+ * Gets if a group with the new user replacing another user compares better to the original group
  * @param newUser The new user
  * @param group The group to check
  * @param data The preference data
@@ -180,6 +183,8 @@ export const balanceGender = (group: Group, gender: Gender, options: Options): G
 export const groupWantsUser = (newUser: UserId, group: Group, { data }: Options): boolean =>
   group.users
     .map((member) =>
+      // The total compare score of all of the users
+      // TODO: without member?
       group.users.reduce(
         (score, otherMember) =>
           score +
@@ -204,6 +209,7 @@ export const groupLessWantedUser = (newUser: UserId, group: Group, { data }: Opt
   group.users
     .map((member) => ({
       member,
+      // Sum of comparing group to group with user replaced
       rank: group.users.reduce(
         (score, otherMember) =>
           score +
@@ -216,6 +222,7 @@ export const groupLessWantedUser = (newUser: UserId, group: Group, { data }: Opt
       ),
     }))
     .filter(({ rank }) => rank < 0)
+    // Sort from lowest to highest score -- most wanted replaced group to least wanted
     .sort(({ rank }, { rank: otherRank }) => rank - otherRank)
     ?.at(0)?.member
 
@@ -328,6 +335,7 @@ export const withUnusedUsers =
       getUnusedUsers(initial, options.data).reduce(
         (groups, { id: userId }) =>
           sortGroupsByLength(groups).reduce((groups, currentGroup) => {
+            // Skip if already included
             if (groups.some(({ users }) => users.includes(userId))) {
               return groups
             } else if (constraints(currentGroup, userId)) {
@@ -366,12 +374,14 @@ export const withUnusedUsers =
       addUsersWithConstraints((group, userId) =>
         group.users.every((member) => !getById(options.data, userId)!.unwanted.includes(member))
       ),
+      // Add all others
       addUsersWithConstraints((_group, _userId) => true)
     )(initial)
   }
 
 /**
  * Tries multiple iterations to find groups with the most people having at least one wanted
+ * and the least unwanted
  * @param iterations The amount of iterations
  * @param data The preference data
  * @param initial The initial groups
