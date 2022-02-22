@@ -628,6 +628,13 @@
   dependencies:
     "@types/lodash" "*"
 
+"@types/lodash.mean@^4.1.6":
+  version "4.1.6"
+  resolved "https://registry.yarnpkg.com/@types/lodash.mean/-/lodash.mean-4.1.6.tgz#d9e96143be1879316aefb2a47133fee530880c07"
+  integrity sha512-eeR4u9Sy/k3sQFUI4WvXwjDjn2FAEKtXwBvbhm5NJbCxSk+aRb2LydKfNQbdTR4dGoPmjnTVUOK7zkJ3zS2VPg==
+  dependencies:
+    "@types/lodash" "*"
+
 "@types/lodash.range@^3.2.6":
   version "3.2.6"
   resolved "https://registry.yarnpkg.com/@types/lodash.range/-/lodash.range-3.2.6.tgz#82e0afe2cbc77698a57a21b9f14cfd22cf547e9f"
@@ -1973,6 +1980,11 @@ lodash.flow@^3.5.0:
   version "3.5.0"
   resolved "https://registry.yarnpkg.com/lodash.flow/-/lodash.flow-3.5.0.tgz#87bf40292b8cf83e4e8ce1a3ae4209e20071675a"
   integrity sha1-h79AKSuM+D5OjOGjrkIJ4gBxZ1o=
+
+lodash.mean@^4.1.0:
+  version "4.1.0"
+  resolved "https://registry.yarnpkg.com/lodash.mean/-/lodash.mean-4.1.0.tgz#bb985349628c0b9d7fe0f5fcc0011a2ee2c0dd7a"
+  integrity sha1-u5hTSWKMC51/4PX8wAEaLuLA3Xo=
 
 lodash.memoize@4.x:
   version "4.1.2"
