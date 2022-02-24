@@ -64,6 +64,7 @@ const options: Options = {
     { id: "12", users: [] },
     { id: "13", users: [] },
   ],
+  desiredWantedAmount: 1,
 }
 
 test("Should have no unwanted", () => {
@@ -160,21 +161,24 @@ test("Should compare groups by preference", () => {
     compareGroupsByPreference(
       { id: "test", wanted: ["a", "b", "c"], unwanted: ["d", "e", "f"], gender: "male" },
       { id: "testGroup", users: ["a", "b", "d"] },
-      { id: "testGroup", users: ["a", "b", "e"] }
+      { id: "testGroup", users: ["a", "b", "e"] },
+      options
     )
   ).toBe(0)
   expect(
     compareGroupsByPreference(
       { id: "test", wanted: ["a", "b", "c"], unwanted: ["d", "e", "f"], gender: "male" },
       { id: "testGroup", users: ["a", "b", "d"] },
-      { id: "testGroup", users: ["a", "b", "c"] }
+      { id: "testGroup", users: ["a", "b", "c"] },
+      options
     )
   ).toBe(1998)
   expect(
     compareGroupsByPreference(
       { id: "test", wanted: ["a", "b", "c"], unwanted: ["d", "e", "f"], gender: "male" },
       { id: "testGroup", users: ["a", "b", "d"] },
-      { id: "testGroup", users: ["a", "e", "d"] }
+      { id: "testGroup", users: ["a", "e", "d"] },
+      options
     )
   ).toBe(-1988)
 })
