@@ -80,27 +80,27 @@ test("Should have no unwanted", () => {
 test("Should have enough wanted", () => {
   range(10).forEach(() => {
     const res = getGroupsIterations(10, options)
-    expect(getWantedAmount(res, options)).toBeGreaterThanOrEqual(res.flatMap(({ users }) => users).length / 1.2)
+    expect(getWantedAmount(res, options)).toBeGreaterThanOrEqual(res.flatMap(({ users }) => users).length / 1.3)
   })
 })
 
 test("Should have enough wanted per user", () => {
-  range(10).forEach(() => {
-    const res = getGroupsIterations(10, options)
-    expect(
-      flow(
-        (groups: Group[]) =>
-          flatMap(groups, (group) =>
-            group.users.map((user) =>
-              without(group.users, user).filter((otherUser) =>
-                options.data.find((u) => u.id == user)?.wanted.includes(otherUser)
-              )
+  range(1).forEach(() => {
+    const res = flow(
+      (groups: Group[]) =>
+        flatMap(groups, (group) =>
+          group.users.map((user) =>
+            without(group.users, user).filter((otherUser) =>
+              options.data.find((u) => u.id == user)?.wanted.includes(otherUser)
             )
-          ),
-        (usersWanted) => map(usersWanted, (wanted: UserId[]) => wanted.length),
-        (amounts) => mean(amounts)
-      )(res)
-    ).toBeLessThanOrEqual(1.4)
+          )
+        ),
+      (wanted) => (console.log(wanted), wanted),
+      (usersWanted) => map(usersWanted, (wanted: UserId[]) => wanted.length),
+      mean
+    )(getGroupsIterations(10, options))
+    expect(res).toBeLessThanOrEqual(1.2)
+    expect(res).toBeGreaterThanOrEqual(0.9)
   })
 })
 

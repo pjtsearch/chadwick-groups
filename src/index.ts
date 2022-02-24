@@ -1,5 +1,6 @@
-import find from "lodash.find"
+import { flatMap, map } from "lodash"
 import flow from "lodash.flow"
+import mean from "lodash.mean"
 import range from "lodash.range"
 import shuffle from "lodash.shuffle"
 import without from "lodash.without"
@@ -152,6 +153,19 @@ export const getGroupScore = (group: Group, member: UserId, { data }: Options): 
       compareGroupsByPreference(getById(data, otherMember)!, { ...group, users: without(group.users, member) }, group),
     0
   )
+
+export const wantedPerUser = (groups: Group[], { data }: Options) =>
+  flow(
+    (groups: Group[]) =>
+      flatMap(groups, (group) =>
+        group.users.map((user) =>
+          without(group.users, user).filter((otherUser) => data.find((u) => u.id == user)?.wanted.includes(otherUser))
+        )
+      ),
+    (usersWanted) => map(usersWanted, (wanted: UserId[]) => wanted.length),
+    mean,
+    (avg) => (isNaN(avg) ? 0 : avg)
+  )(groups)
 
 /**
  * Gets the group with the correct number of a gender
@@ -391,7 +405,9 @@ export const getGroupsIterations = (iterations: number, options: Options) =>
     const curr = getGroups(options.initial, options)
 
     return getUnwantedAmount(curr, options) <= getUnwantedAmount(prev, options) &&
-      getWantedAmount(curr, options) > getWantedAmount(prev, options)
+      wantedPerUser(curr, options) >= wantedPerUser(prev, options) &&
+      Math.abs(1 - wantedPerUser(curr, options)) < Math.abs(1 - wantedPerUser(prev, options)) &&
+      curr.flatMap((g: Group) => g.users).length > 0
       ? curr
       : prev
   }, options.initial)
