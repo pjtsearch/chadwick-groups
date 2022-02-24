@@ -393,7 +393,7 @@ export const withUnusedUsers =
   }
 
 /**
- * Tries multiple iterations to find groups with the most people having at least one wanted
+ * Tries multiple iterations to find groups with the most people having one wanted
  * and the least unwanted
  * @param iterations The amount of iterations
  * @param data The preference data
