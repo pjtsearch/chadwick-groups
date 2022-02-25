@@ -1,4 +1,5 @@
-import { flatMap, map } from "lodash"
+import map from "lodash.map"
+import flatMap from "lodash.flatmap"
 import flow from "lodash.flow"
 import mean from "lodash.mean"
 import range from "lodash.range"
