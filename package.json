@@ -1,7 +1,7 @@
 {
   "name": "chadwick-groups",
   "version": "1.0.0",
-  "main": "index.ts",
+  "main": "src/index.ts",
   "repository": "https://github.com/pjtsearch/chadwick-groups.git",
   "author": "PJTSearch <pjtsignups@gmail.com>",
   "license": "MIT",
