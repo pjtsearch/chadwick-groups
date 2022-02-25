@@ -17,7 +17,7 @@ import {
   Options,
   UserId,
   withUnusedUsers,
-} from "./"
+} from "./groups"
 
 const options: Options = {
   data: [
