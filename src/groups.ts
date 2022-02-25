@@ -126,7 +126,9 @@ const sortGroupsByLength = (groups: Group[]) =>
  * @returns The amount of users that have people have people they want in their group
  */
 export const getWantedAmount = (groups: Group[], { data }: Options) =>
-  groups.flatMap((group) => group.users.filter((user) => group.users.some(isWanted(getById(data, user)!)))).length
+  groups.flatMap((group) =>
+    group.users.filter((user) => group.users.some(isWanted(getById(data, user)!)))
+  ).length
 
 /**
  * Gets how many users have people have at least one person they want in their group
@@ -136,7 +138,9 @@ export const getWantedAmount = (groups: Group[], { data }: Options) =>
  */
 export const getUnwantedAmount = (groups: Group[], { data }: Options) =>
   groups.flatMap((group) =>
-    group.users.filter((user) => group.users.some((otherUser) => getById(data, user)!.unwanted.includes(otherUser)))
+    group.users.filter((user) =>
+      group.users.some((otherUser) => getById(data, user)!.unwanted.includes(otherUser))
+    )
   ).length
 
 // Higher is more wanted
@@ -166,7 +170,9 @@ export const wantedPerUser = (groups: Group[], { data }: Options) =>
     (groups: Group[]) =>
       flatMap(groups, (group) =>
         group.users.map((user) =>
-          without(group.users, user).filter((otherUser) => data.find((u) => u.id == user)?.wanted.includes(otherUser))
+          without(group.users, user).filter((otherUser) =>
+            data.find((u) => u.id == user)?.wanted.includes(otherUser)
+          )
         )
       ),
     (usersWanted) => map(usersWanted, (wanted: UserId[]) => wanted.length),
@@ -187,7 +193,10 @@ export const balanceGender = (group: Group, gender: Gender, options: Options): G
   if (group.users.filter(isGender(gender, options)).length > Math.floor(options.groupSize / 2)) {
     const leastWanted = group.users
       .filter(isGender(gender, options))
-      .sort((member, otherMember) => getGroupScore(group, member, options) - getGroupScore(group, otherMember, options))
+      .sort(
+        (member, otherMember) =>
+          getGroupScore(group, member, options) - getGroupScore(group, otherMember, options)
+      )
     return balanceGender({ ...group, users: without(group.users, leastWanted[0]) }, gender, options)
   }
   return group
@@ -226,7 +235,11 @@ export const groupWantsUser = (newUser: UserId, group: Group, options: Options):
  * @param data The preference data
  * @returns The user who is less wanted than a new user or undefined if there isn't one
  */
-export const groupLessWantedUser = (newUser: UserId, group: Group, options: Options): UserId | undefined =>
+export const groupLessWantedUser = (
+  newUser: UserId,
+  group: Group,
+  options: Options
+): UserId | undefined =>
   group.users
     .map((member) => ({
       member,
@@ -262,7 +275,9 @@ export const compareGroupsByPreference = (
   otherGroup: Group,
   { desiredWantedAmount }: Options
 ) =>
-  (group.users.filter(isUnwanted(prefs)).length - otherGroup.users.filter(isUnwanted(prefs)).length) * 2000 +
+  (group.users.filter(isUnwanted(prefs)).length -
+    otherGroup.users.filter(isUnwanted(prefs)).length) *
+    2000 +
   (group.users.filter(isWanted(prefs)).length > desiredWantedAmount + 1 ? 2 : 0) +
   (otherGroup.users.filter(isWanted(prefs)).length > desiredWantedAmount + 1 ? -2 : 0) +
   (group.users.filter(isWanted(prefs)).length > 0 ? -3 : 3) +
@@ -308,7 +323,9 @@ const getGroups = (initial: Group[], options: Options): Group[] =>
               return groups
             } else if (
               currentGroup.users.length < options.groupSize &&
-              currentGroup.users.every((member) => !getById(options.data, member)!.unwanted.includes(userData.id))
+              currentGroup.users.every(
+                (member) => !getById(options.data, member)!.unwanted.includes(userData.id)
+              )
             ) {
               return groupsUpdate(
                 groups,
@@ -325,7 +342,10 @@ const getGroups = (initial: Group[], options: Options): Group[] =>
                   {
                     ...currentGroup,
                     users: [
-                      ...without(currentGroup.users, groupLessWantedUser(userData.id, currentGroup, options)!),
+                      ...without(
+                        currentGroup.users,
+                        groupLessWantedUser(userData.id, currentGroup, options)!
+                      ),
                       userData.id,
                     ],
                   },
@@ -358,29 +378,37 @@ const getGroups = (initial: Group[], options: Options): Group[] =>
 export const withUnusedUsers =
   (options: Options) =>
   (initial: Group[]): Group[] => {
-    const addUsersWithConstraints = (constraints: (group: Group, userId: UserId) => boolean) => (initial: Group[]) =>
-      getUnusedUsers(initial, options.data).reduce(
-        (groups, { id: userId }) =>
-          sortGroupsByLength(groups).reduce((groups, currentGroup) => {
-            // Skip if already included
-            if (groups.some(({ users }) => users.includes(userId))) {
-              return groups
-            } else if (constraints(currentGroup, userId)) {
-              return groupsUpdate(groups, { ...currentGroup, users: [...currentGroup.users, userId] })
-            } else {
-              return groups
-            }
-          }, groups),
-        initial
-      )
+    const addUsersWithConstraints =
+      (constraints: (group: Group, userId: UserId) => boolean) => (initial: Group[]) =>
+        getUnusedUsers(initial, options.data).reduce(
+          (groups, { id: userId }) =>
+            sortGroupsByLength(groups).reduce((groups, currentGroup) => {
+              // Skip if already included
+              if (groups.some(({ users }) => users.includes(userId))) {
+                return groups
+              } else if (constraints(currentGroup, userId)) {
+                return groupsUpdate(groups, {
+                  ...currentGroup,
+                  users: [...currentGroup.users, userId],
+                })
+              } else {
+                return groups
+              }
+            }, groups),
+          initial
+        )
 
     return flow(
       // Without conflict
       addUsersWithConstraints(
         (group, userId) =>
           group.users.length < options.groupSize &&
-          group.users.every((member) => !getById(options.data, member)!.unwanted.includes(userId)) &&
-          group.users.every((member) => !getById(options.data, userId)!.unwanted.includes(member)) &&
+          group.users.every(
+            (member) => !getById(options.data, member)!.unwanted.includes(userId)
+          ) &&
+          group.users.every(
+            (member) => !getById(options.data, userId)!.unwanted.includes(member)
+          ) &&
           group.users.filter(isGender(getById(options.data, userId)!.gender, options)).length <
             Math.floor(options.groupSize / 2)
       ),
@@ -388,13 +416,17 @@ export const withUnusedUsers =
       addUsersWithConstraints(
         (group, userId) =>
           group.users.length < options.groupSize &&
-          group.users.every((member) => !getById(options.data, member)!.unwanted.includes(userId)) &&
+          group.users.every(
+            (member) => !getById(options.data, member)!.unwanted.includes(userId)
+          ) &&
           group.users.every((member) => !getById(options.data, userId)!.unwanted.includes(member))
       ),
       // With length conflict
       addUsersWithConstraints(
         (group, userId) =>
-          group.users.every((member) => !getById(options.data, member)!.unwanted.includes(userId)) &&
+          group.users.every(
+            (member) => !getById(options.data, member)!.unwanted.includes(userId)
+          ) &&
           group.users.every((member) => !getById(options.data, userId)!.unwanted.includes(member))
       ),
       // Wanted conflict

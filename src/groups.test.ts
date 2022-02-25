@@ -72,7 +72,9 @@ test("Should have no unwanted", () => {
   range(10).forEach(() => {
     const unwanted = getGroupsIterations(5, options).flatMap((group) =>
       group.users.filter((user) =>
-        group.users.some((otherUser) => find(options.data, { id: user })!.unwanted.includes(otherUser))
+        group.users.some((otherUser) =>
+          find(options.data, { id: user })!.unwanted.includes(otherUser)
+        )
       )
     )
     expect(unwanted.length).toBe(0)
@@ -82,7 +84,9 @@ test("Should have no unwanted", () => {
 test("Should have enough wanted", () => {
   range(10).forEach(() => {
     const res = getGroupsIterations(10, options)
-    expect(getWantedAmount(res, options)).toBeGreaterThanOrEqual(res.flatMap(({ users }) => users).length / 1.3)
+    expect(getWantedAmount(res, options)).toBeGreaterThanOrEqual(
+      res.flatMap(({ users }) => users).length / 1.3
+    )
   })
 })
 
@@ -145,7 +149,10 @@ test("Should balance gender", () => {
     id: "a",
     users: ["a", "b", "c"],
   })
-  expect(balanceGender({ id: "a", users: ["a", "b", "c"] }, "male", options)).toEqual({ id: "a", users: ["a", "c"] })
+  expect(balanceGender({ id: "a", users: ["a", "b", "c"] }, "male", options)).toEqual({
+    id: "a",
+    users: ["a", "c"],
+  })
 })
 
 test("Should get if group wants user", () => {
