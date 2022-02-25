@@ -297,7 +297,7 @@ const sortGroupsByPreference = (prefs: UserData, groups: Group[], options: Optio
  * @param data The preference data
  * @returns Groups with all users
  */
-const getGroups = (initial: Group[], options: Options) =>
+const getGroups = (initial: Group[], options: Options): Group[] =>
   flow(
     shuffle,
     (shuffled: UserData[]) =>
