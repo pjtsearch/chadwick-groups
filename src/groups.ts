@@ -165,6 +165,12 @@ export const getGroupScore = (group: Group, member: UserId, options: Options): n
     0
   )
 
+/**
+ * Gets the average number of wanted people for each user
+ * @param groups The groups to check from
+ * @param options The groups options
+ * @returns The amount of wanted per user
+ */
 export const wantedPerUser = (groups: Group[], { data }: Options) =>
   flow(
     (groups: Group[]) =>
