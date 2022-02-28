@@ -20,6 +20,9 @@ export type UserId = string
  * Type for user data
  */
 export type UserData = {
+  /**
+   * The id of the user
+   */
   id: UserId
   /**
    * Users that are wanted to be in a group with
@@ -38,7 +41,16 @@ export type UserData = {
 /**
  * Type for a group of users
  */
-export type Group = { id: GroupId; users: UserId[] }
+export type Group = {
+  /**
+   * The id of the group
+   */
+  id: GroupId
+  /**
+   * The members of the group
+   */
+  users: UserId[]
+}
 
 /**
  * Type for the id of a group
