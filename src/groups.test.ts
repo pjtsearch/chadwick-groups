@@ -83,15 +83,15 @@ test("Should have no unwanted", () => {
 
 test("Should have enough wanted", () => {
   range(10).forEach(() => {
-    const res = getGroupsIterations(10, options)
+    const res = getGroupsIterations(30, options)
     expect(getWantedAmount(res, options)).toBeGreaterThanOrEqual(
-      res.flatMap(({ users }) => users).length / 1.4
+      res.flatMap(({ users }) => users).length / 1.3
     )
   })
 })
 
 test("Should have enough wanted per user", () => {
-  range(1).forEach(() => {
+  range(10).forEach(() => {
     const res = flow(
       (groups: Group[]) =>
         flatMap(groups, (group) =>
@@ -103,8 +103,8 @@ test("Should have enough wanted per user", () => {
         ),
       (usersWanted) => map(usersWanted, (wanted: UserId[]) => wanted.length),
       mean
-    )(getGroupsIterations(10, options))
-    expect(res).toBeLessThanOrEqual(1.2)
+    )(getGroupsIterations(20, options))
+    expect(res).toBeLessThanOrEqual(1.3)
     expect(res).toBeGreaterThanOrEqual(0.9)
   })
 })
