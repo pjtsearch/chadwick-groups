@@ -484,6 +484,7 @@ export const getGroupsIterations = (iterations: number, options: Options) =>
 
     return getUnwantedAmount(curr, options) <= getUnwantedAmount(prev, options) &&
       wantedPerUser(curr, options) >= wantedPerUser(prev, options) &&
+      // Less difference from desired wanted amount
       Math.abs(options.desiredWantedAmount - wantedPerUser(curr, options)) <
         Math.abs(options.desiredWantedAmount - wantedPerUser(prev, options)) &&
       curr.flatMap((g: Group) => g.users).length > 0
