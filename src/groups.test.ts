@@ -85,7 +85,7 @@ test("Should have enough wanted", () => {
   range(10).forEach(() => {
     const res = getGroupsIterations(10, options)
     expect(getWantedAmount(res, options)).toBeGreaterThanOrEqual(
-      res.flatMap(({ users }) => users).length / 1.3
+      res.flatMap(({ users }) => users).length / 1.4
     )
   })
 })
@@ -101,7 +101,6 @@ test("Should have enough wanted per user", () => {
             )
           )
         ),
-      (wanted) => (console.log(wanted), wanted),
       (usersWanted) => map(usersWanted, (wanted: UserId[]) => wanted.length),
       mean
     )(getGroupsIterations(10, options))
