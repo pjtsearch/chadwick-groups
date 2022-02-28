@@ -1,10 +1,5 @@
-import map from "lodash.map"
-import flatMap from "lodash.flatmap"
 import find from "lodash.find"
-import flow from "lodash.flow"
-import mean from "lodash.mean"
 import range from "lodash.range"
-import without from "lodash.without"
 import {
   balanceGender,
   compareGroupsByPreference,
@@ -12,11 +7,10 @@ import {
   getGroupsIterations,
   getUnwantedAmount,
   getWantedAmount,
-  Group,
   groupLessWantedUser,
   groupWantsUser,
   Options,
-  UserId,
+  wantedPerUser,
   withUnusedUsers,
 } from "./groups"
 
@@ -92,19 +86,8 @@ test("Should have enough wanted", () => {
 
 test("Should have enough wanted per user", () => {
   range(10).forEach(() => {
-    const res = flow(
-      (groups: Group[]) =>
-        flatMap(groups, (group) =>
-          group.users.map((user) =>
-            without(group.users, user).filter((otherUser) =>
-              options.data.find((u) => u.id == user)?.wanted.includes(otherUser)
-            )
-          )
-        ),
-      (usersWanted) => map(usersWanted, (wanted: UserId[]) => wanted.length),
-      mean
-    )(getGroupsIterations(20, options))
-    expect(res).toBeLessThanOrEqual(1.3)
+    const res = wantedPerUser(getGroupsIterations(40, options), options)
+    expect(res).toBeLessThanOrEqual(1.5)
     expect(res).toBeGreaterThanOrEqual(0.9)
   })
 })
