@@ -49,9 +49,21 @@ export type GroupId = string
  * Options for group creating
  */
 export type Options = {
+  /**
+   * The desired size of groups
+   */
   groupSize: number
+  /**
+   * The desired amount of wanted users for each user
+   */
   desiredWantedAmount: number
+  /**
+   * The initial groups
+   */
   initial: Group[]
+  /**
+   * The user data
+   */
   data: UserData[]
 }
 
