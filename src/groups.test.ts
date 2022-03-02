@@ -1,6 +1,7 @@
 import find from "lodash.find"
 import range from "lodash.range"
 import {
+  avgWithoutZero,
   balanceGender,
   compareGroupsByPreference,
   getGroupScore,
@@ -64,7 +65,7 @@ const options: Options = {
 
 test("Should have no unwanted", () => {
   range(10).forEach(() => {
-    const unwanted = getGroupsIterations(5, options).flatMap((group) =>
+    const unwanted = getGroupsIterations(100, options).flatMap((group) =>
       group.users.filter((user) =>
         group.users.some((otherUser) =>
           find(options.data, { id: user })!.unwanted.includes(otherUser)
@@ -86,9 +87,11 @@ test("Should have enough wanted", () => {
 
 test("Should have enough wanted per user", () => {
   range(10).forEach(() => {
-    const res = wantedPerUser(getGroupsIterations(40, options), options)
-    expect(res).toBeLessThanOrEqual(1.5)
+    const wanted = wantedPerUser(getGroupsIterations(100, options), options)
+    const res = avgWithoutZero(wanted)
+    expect(res).toBeLessThanOrEqual(1.75)
     expect(res).toBeGreaterThanOrEqual(0.9)
+    expect(wanted.filter((a) => a == 0).length).toBeLessThanOrEqual(2)
   })
 })
 
