@@ -189,6 +189,9 @@ export const getGroupScore = (group: Group, member: UserId, options: Options): n
     0
   )
 
+export const avgWithoutZero = (array: number[]) =>
+  flow(mean, (avg) => (isNaN(avg) ? 0 : avg))(array)
+
 /**
  * Gets the average number of wanted people for each user
  * @param groups The groups to check from
@@ -205,9 +208,7 @@ export const wantedPerUser = (groups: Group[], { data }: Options) =>
           )
         )
       ),
-    (usersWanted) => map(usersWanted, (wanted: UserId[]) => wanted.length),
-    mean,
-    (avg) => (isNaN(avg) ? 0 : avg)
+    (usersWanted) => map(usersWanted, (wanted: UserId[]) => wanted.length)
   )(groups)
 
 /**
@@ -478,15 +479,25 @@ export const withUnusedUsers =
  * @returns The groups with the most wanted
  */
 export const getGroupsIterations = (iterations: number, options: Options) =>
-  range(iterations).reduce((prev) => {
-    const curr = getGroups(options.initial, options)
-
-    return getUnwantedAmount(curr, options) <= getUnwantedAmount(prev, options) &&
-      wantedPerUser(curr, options) >= wantedPerUser(prev, options) &&
-      // Less difference from desired wanted amount
-      Math.abs(options.desiredWantedAmount - wantedPerUser(curr, options)) <
-        Math.abs(options.desiredWantedAmount - wantedPerUser(prev, options)) &&
-      curr.flatMap((g: Group) => g.users).length > 0
-      ? curr
-      : prev
-  }, options.initial)
+  range(iterations)
+    .map(() => {
+      return getGroups(options.initial, options)
+    })
+    .sort(
+      (curr, prev) =>
+        (getUnwantedAmount(curr, options) <= getUnwantedAmount(prev, options) ? -1000 : 1000) +
+        (wantedPerUser(curr, options) >= wantedPerUser(prev, options) ? -50 : 50) +
+        (Math.abs(options.desiredWantedAmount - avgWithoutZero(wantedPerUser(curr, options))) <
+        Math.abs(options.desiredWantedAmount - avgWithoutZero(wantedPerUser(prev, options)))
+          ? -60
+          : 60) +
+        (wantedPerUser(curr, options).filter((a) => a == 0) <
+        wantedPerUser(prev, options).filter((a) => a == 0)
+          ? -310
+          : 310) +
+        (curr.flatMap((g: Group) => g.users).length > 0 ? -2000 : 2000) +
+        (curr.flatMap((g: Group) => g.users).length > 0 &&
+        prev.flatMap((g: Group) => g.users).length == 0
+          ? -3000
+          : 3000)
+    )[0]
