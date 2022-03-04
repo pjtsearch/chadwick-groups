@@ -266,7 +266,7 @@ export const groupWantsUser = (newUser: UserId, group: Group, options: Options):
  * @param options The groups options
  * @returns The user who is less wanted than a new user or undefined if there isn't one
  */
-export const groupLessWantedUser = (
+export const getGroupLessWantedUser = (
   newUser: UserId,
   group: Group,
   options: Options
@@ -376,7 +376,7 @@ const getGroups = (initial: Group[], options: Options): Group[] =>
                     users: [
                       ...without(
                         currentGroup.users,
-                        groupLessWantedUser(userData.id, currentGroup, options)!
+                        getGroupLessWantedUser(userData.id, currentGroup, options)!
                       ),
                       userData.id,
                     ],

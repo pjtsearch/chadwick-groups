@@ -8,7 +8,7 @@ import {
   getGroupsIterations,
   getUnwantedAmount,
   getWantedAmount,
-  groupLessWantedUser,
+  getGroupLessWantedUser,
   groupWantsUser,
   Options,
   wantedPerUser,
@@ -142,11 +142,11 @@ test("Should balance gender", () => {
 
 test("Should get if group wants user", () => {
   expect(groupWantsUser("f", { id: "a", users: ["a", "b", "c"] }, options)).toBe(true)
-  expect(groupLessWantedUser("f", { id: "a", users: ["a", "b", "c"] }, options)).toBe("b")
+  expect(getGroupLessWantedUser("f", { id: "a", users: ["a", "b", "c"] }, options)).toBe("b")
   expect(groupWantsUser("d", { id: "a", users: ["a", "b", "c"] }, options)).toBe(true)
-  expect(groupLessWantedUser("d", { id: "a", users: ["a", "b", "c"] }, options)).toBe("a")
+  expect(getGroupLessWantedUser("d", { id: "a", users: ["a", "b", "c"] }, options)).toBe("a")
   expect(groupWantsUser("e", { id: "a", users: ["a", "b", "c"] }, options)).toBe(true)
-  expect(groupLessWantedUser("e", { id: "a", users: ["a", "b", "c"] }, options)).toBe("a")
+  expect(getGroupLessWantedUser("e", { id: "a", users: ["a", "b", "c"] }, options)).toBe("a")
 })
 
 test("Should compare groups by preference", () => {
