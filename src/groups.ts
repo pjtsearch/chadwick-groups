@@ -296,7 +296,7 @@ export const getGroupLessWantedUser = (
     }))
     .filter(({ rank }) => rank < 0)
     // Sort from lowest to highest score -- most wanted replaced group to least wanted
-    .sort(({ rank }, { rank: otherRank }) => rank - otherRank)?.[0]?.member
+    .reduce((last, curr) => (curr.rank < last.rank ? curr : last))?.member
 
 /**
  * Compares group to be sorted from most to least liked
