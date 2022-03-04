@@ -189,6 +189,18 @@ export const getGroupScore = (group: Group, member: UserId, options: Options): n
     0
   )
 
+/**
+ * Sorts group members by their group score
+ * @param group Groups to sort members
+ * @param options The groups options
+ * @returns The group members by their group score
+ */
+const sortByGroupScore = (group: Group, options: Options) =>
+  group.users.sort(
+    (member, otherMember) =>
+      getGroupScore(group, otherMember, options) - getGroupScore(group, member, options)
+  )
+
 export const avgWithoutZero = (array: number[]) =>
   flow(mean, (avg) => (isNaN(avg) ? 0 : avg))(array)
 
@@ -222,13 +234,15 @@ export const wantedPerUser = (groups: Group[], { data }: Options) =>
  */
 export const balanceGender = (group: Group, gender: Gender, options: Options): Group => {
   if (group.users.filter(isGender(gender, options)).length > Math.floor(options.groupSize / 2)) {
-    const leastWanted = group.users
-      .filter(isGender(gender, options))
-      .sort(
-        (member, otherMember) =>
-          getGroupScore(group, member, options) - getGroupScore(group, otherMember, options)
-      )
-    return balanceGender({ ...group, users: without(group.users, leastWanted[0]) }, gender, options)
+    const leastWanted = sortByGroupScore(
+      { ...group, users: group.users.filter(isGender(gender, options)) },
+      options
+    )
+    return balanceGender(
+      { ...group, users: without(group.users, leastWanted.at(-1)!) },
+      gender,
+      options
+    )
   }
   return group
 }

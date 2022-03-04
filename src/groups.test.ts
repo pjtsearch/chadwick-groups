@@ -136,7 +136,7 @@ test("Should balance gender", () => {
   })
   expect(balanceGender({ id: "a", users: ["a", "b", "c"] }, "male", options)).toEqual({
     id: "a",
-    users: ["a", "c"],
+    users: ["a", "b"],
   })
 })
 
