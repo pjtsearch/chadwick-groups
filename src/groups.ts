@@ -471,34 +471,51 @@ export const withUnusedUsers =
   }
 
 /**
- * Tries getting groups multiple times, then finds the best group based on:
+ * Gets a group set score based on:
  * - The amount of unwanted
  * - The difference from the desired group size
  * - The least amount of users with no wanted
  * - Not having 0 length
+ * @param groups The group set
+ * @param otherGroups The group set to compare with
+ * @param options The groups options
+ * @returns The group score (lower is better)
+ */
+const getGroupSetScore = (groups: Group[], otherGroups: Group[], options: Options) =>
+  (getUnwantedAmount(groups, options) <= getUnwantedAmount(otherGroups, options) ? -1000 : 1000) +
+  (wantedPerUser(groups, options) >= wantedPerUser(otherGroups, options) ? -50 : 50) +
+  (Math.abs(options.desiredWantedAmount - avgWithoutZero(wantedPerUser(groups, options))) <
+  Math.abs(options.desiredWantedAmount - avgWithoutZero(wantedPerUser(otherGroups, options)))
+    ? -60
+    : 60) +
+  (wantedPerUser(groups, options).filter((a) => a == 0) <
+  wantedPerUser(otherGroups, options).filter((a) => a == 0)
+    ? -310
+    : 310) +
+  (groups.flatMap((g: Group) => g.users).length > 0 ? -2000 : 2000) +
+  (groups.flatMap((g: Group) => g.users).length > 0 &&
+  otherGroups.flatMap((g: Group) => g.users).length == 0
+    ? -3000
+    : 3000)
+
+/**
+ * Sorts sets of groups (from best to worst) based on the {@link getGroupSetScore group set score}
+ * @param groupSets Sets of groups
+ * @param options The groups options
+ * @returns The sorted sets of groups
+ */
+const sortGroupSets = (groupSets: Group[][], options: Options) =>
+  groupSets.sort((groups, otherGroups) => getGroupSetScore(groups, otherGroups, options))
+
+/**
+ * Tries getting groups multiple times, then finds the best group based on the {@link getGroupSetScore group set score}
  *
  * @param iterations The amount of iterations
  * @param options The groups options
  * @returns The groups with the most wanted
  */
-export const getGroupsIterations = (iterations: number, options: Options) =>
-  range(iterations)
-    .map(() => getGroups(options.initial, options))
-    .sort(
-      (curr, prev) =>
-        (getUnwantedAmount(curr, options) <= getUnwantedAmount(prev, options) ? -1000 : 1000) +
-        (wantedPerUser(curr, options) >= wantedPerUser(prev, options) ? -50 : 50) +
-        (Math.abs(options.desiredWantedAmount - avgWithoutZero(wantedPerUser(curr, options))) <
-        Math.abs(options.desiredWantedAmount - avgWithoutZero(wantedPerUser(prev, options)))
-          ? -60
-          : 60) +
-        (wantedPerUser(curr, options).filter((a) => a == 0) <
-        wantedPerUser(prev, options).filter((a) => a == 0)
-          ? -310
-          : 310) +
-        (curr.flatMap((g: Group) => g.users).length > 0 ? -2000 : 2000) +
-        (curr.flatMap((g: Group) => g.users).length > 0 &&
-        prev.flatMap((g: Group) => g.users).length == 0
-          ? -3000
-          : 3000)
-    )[0]
+export const getGroupsIterations = (iterations: number, options: Options): Group[] =>
+  flow(
+    (iterations) => map(iterations, () => getGroups(options.initial, options)),
+    (groups) => sortGroupSets(groups, options)[0]
+  )(range(iterations))
