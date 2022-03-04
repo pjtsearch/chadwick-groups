@@ -471,18 +471,19 @@ export const withUnusedUsers =
   }
 
 /**
- * Tries multiple iterations to find groups with the most people having one wanted
- * and the least unwanted
+ * Tries getting groups multiple times, then finds the best group based on:
+ * - The amount of unwanted
+ * - The difference from the desired group size
+ * - The least amount of users with no wanted
+ * - Not having 0 length
+ *
  * @param iterations The amount of iterations
  * @param options The groups options
- * @param initial The initial groups
  * @returns The groups with the most wanted
  */
 export const getGroupsIterations = (iterations: number, options: Options) =>
   range(iterations)
-    .map(() => {
-      return getGroups(options.initial, options)
-    })
+    .map(() => getGroups(options.initial, options))
     .sort(
       (curr, prev) =>
         (getUnwantedAmount(curr, options) <= getUnwantedAmount(prev, options) ? -1000 : 1000) +
