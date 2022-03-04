@@ -195,6 +195,11 @@ const sortByGroupScore = (group: Group, options: Options) =>
       getGroupScore(group, otherMember, options) - getGroupScore(group, member, options)
   )
 
+/**
+ * Gets the average of the array items, or 0 if 0 length
+ * @param array Arry to average
+ * @returns The average of the array items, or 0 if 0 length
+ */
 export const avgWithoutZero = (array: number[]) =>
   flow(mean, (avg) => (isNaN(avg) ? 0 : avg))(array)
 
