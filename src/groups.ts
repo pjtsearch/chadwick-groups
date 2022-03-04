@@ -418,19 +418,19 @@ export const withUnusedUsers =
       (constraints: (group: Group, userId: UserId) => boolean) => (initial: Group[]) =>
         getUnusedUsers(initial, options.data).reduce(
           (groups, { id: userId }) =>
-            sortGroupsByLength(groups).reduce((groups, currentGroup) => {
-              // Skip if already included
-              if (groups.some(({ users }) => users.includes(userId))) {
-                return groups
-              } else if (constraints(currentGroup, userId)) {
-                return groupsUpdate(groups, {
-                  ...currentGroup,
-                  users: [...currentGroup.users, userId],
-                })
-              } else {
-                return groups
-              }
-            }, groups),
+            sortGroupsByLength(groups).reduce(
+              (groups, currentGroup) =>
+                // Skip if already included
+                groups.some(({ users }) => users.includes(userId))
+                  ? groups
+                  : constraints(currentGroup, userId)
+                  ? groupsUpdate(groups, {
+                      ...currentGroup,
+                      users: [...currentGroup.users, userId],
+                    })
+                  : groups,
+              groups
+            ),
           initial
         )
 
