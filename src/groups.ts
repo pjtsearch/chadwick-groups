@@ -1,10 +1,4 @@
-import map from "lodash.map"
-import flatMap from "lodash.flatmap"
-import flow from "lodash.flow"
-import mean from "lodash.mean"
-import range from "lodash.range"
-import shuffle from "lodash.shuffle"
-import without from "lodash.without"
+import { map, flatMap, flow, mean, range, shuffle, without } from "lodash/fp"
 
 /**
  * Type for gender
@@ -177,12 +171,12 @@ export const getUnwantedAmount = (groups: Group[], { data }: Options) =>
  * @returns How much other users prefer a group without this member compared to one with them
  */
 export const getGroupScore = (group: Group, member: UserId, options: Options): number =>
-  without(group.users, member).reduce(
+  without([member], group.users).reduce(
     (score, otherMember) =>
       score +
       compareGroupsByPreference(
         getById(options.data, otherMember)!,
-        { ...group, users: without(group.users, member) },
+        { ...group, users: without([member], group.users) },
         group,
         options
       ),
@@ -212,15 +206,14 @@ export const avgWithoutZero = (array: number[]) =>
  */
 export const wantedPerUser = (groups: Group[], { data }: Options) =>
   flow(
-    (groups: Group[]) =>
-      flatMap(groups, (group) =>
-        group.users.map((user) =>
-          without(group.users, user).filter((otherUser) =>
-            data.find((u) => u.id == user)?.wanted.includes(otherUser)
-          )
+    flatMap((group: Group) =>
+      group.users.map((user) =>
+        without([user], group.users).filter((otherUser) =>
+          data.find((u) => u.id == user)?.wanted.includes(otherUser)
         )
-      ),
-    (usersWanted) => map(usersWanted, (wanted: UserId[]) => wanted.length)
+      )
+    ),
+    map((wanted: UserId[]) => wanted.length)
   )(groups)
 
 /**
@@ -239,7 +232,7 @@ export const balanceGender = (group: Group, gender: Gender, options: Options): G
       options
     )
     return balanceGender(
-      { ...group, users: without(group.users, leastWanted.at(-1)!) },
+      { ...group, users: without([leastWanted.at(-1)!], group.users) },
       gender,
       options
     )
@@ -259,12 +252,12 @@ export const groupWantsUser = (newUser: UserId, group: Group, options: Options):
   group.users
     .map((member) =>
       // The total compare score of all of the users
-      without(group.users, member).reduce(
+      without([member], group.users).reduce(
         (score, otherMember) =>
           score +
           compareGroupsByPreference(
             getById(options.data, otherMember)!,
-            { ...group, users: [...without(group.users, member), newUser] },
+            { ...group, users: [...without([member], group.users), newUser] },
             group,
             options
           ),
@@ -294,7 +287,7 @@ export const getGroupLessWantedUser = (
           score +
           compareGroupsByPreference(
             getById(options.data, otherMember)!,
-            { ...group, users: [...without(group.users, member), newUser] },
+            { ...group, users: [...without([member], group.users), newUser] },
             group,
             options
           ),
@@ -389,8 +382,8 @@ const getGroups = (initial: Group[], options: Options): Group[] =>
                     ...currentGroup,
                     users: [
                       ...without(
-                        currentGroup.users,
-                        getGroupLessWantedUser(userData.id, currentGroup, options)!
+                        [getGroupLessWantedUser(userData.id, currentGroup, options)!],
+                        currentGroup.users
                       ),
                       userData.id,
                     ],
@@ -530,6 +523,6 @@ const sortGroupSets = (groupSets: Group[][], options: Options) =>
  */
 export const getGroupsIterations = (iterations: number, options: Options): Group[] =>
   flow(
-    (iterations) => map(iterations, () => getGroups(options.initial, options)),
+    map(() => getGroups(options.initial, options)),
     (groups) => sortGroupSets(groups, options)[0]
-  )(range(iterations))
+  )(range(0)(iterations))

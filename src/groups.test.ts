@@ -1,5 +1,5 @@
-import find from "lodash.find"
-import range from "lodash.range"
+import { find, range } from "lodash/fp"
+
 import {
   avgWithoutZero,
   balanceGender,
@@ -64,11 +64,11 @@ const options: Options = {
 }
 
 test("Should have no unwanted", () => {
-  range(10).forEach(() => {
+  range(0)(10).forEach(() => {
     const unwanted = getGroupsIterations(100, options).flatMap((group) =>
       group.users.filter((user) =>
         group.users.some((otherUser) =>
-          find(options.data, { id: user })!.unwanted.includes(otherUser)
+          find({ id: user }, options.data)!.unwanted.includes(otherUser)
         )
       )
     )
@@ -77,7 +77,7 @@ test("Should have no unwanted", () => {
 })
 
 test("Should have enough wanted", () => {
-  range(10).forEach(() => {
+  range(0)(10).forEach(() => {
     const res = getGroupsIterations(30, options)
     expect(getWantedAmount(res, options)).toBeGreaterThanOrEqual(
       res.flatMap(({ users }) => users).length / 1.3
@@ -86,7 +86,7 @@ test("Should have enough wanted", () => {
 })
 
 test("Should have enough wanted per user", () => {
-  range(10).forEach(() => {
+  range(0)(10).forEach(() => {
     const wanted = wantedPerUser(getGroupsIterations(100, options), options)
     const res = avgWithoutZero(wanted)
     expect(res).toBeLessThanOrEqual(1.75)
@@ -96,16 +96,16 @@ test("Should have enough wanted per user", () => {
 })
 
 test("Should have all users", () => {
-  range(10).forEach(() => {
+  range(0)(10).forEach(() => {
     const groupedUsers = getGroupsIterations(10, options).flatMap(({ users }) => users)
     expect(groupedUsers.sort()).toEqual(options.data.map(({ id }) => id).sort())
   })
 })
 
 test("Should have gender balance", () => {
-  range(10).forEach(() => {
+  range(0)(10).forEach(() => {
     const groupsGenders = getGroupsIterations(10, options)
-      .map((group) => group.users.map((user) => find(options.data, { id: user })!.gender))
+      .map((group) => group.users.map((user) => find({ id: user }, options.data)!.gender))
       .filter((g) => g.length > 0)
     const difference = groupsGenders.map((group) =>
       Math.abs(options.groupSize / 2 - group.filter((g) => g == "male").length)
