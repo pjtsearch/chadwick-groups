@@ -1,4 +1,4 @@
-import { map, flatMap, flow, mean, range, shuffle, without } from "lodash/fp"
+import { map, flatMap, flow, mean, range, shuffle, without, reduce } from "lodash/fp"
 
 /**
  * Type for gender
@@ -354,50 +354,47 @@ const sortGroupsByPreference = (prefs: UserData, groups: Group[], options: Optio
 const getGroups = (initial: Group[], options: Options): Group[] =>
   flow(
     shuffle,
-    (shuffled: UserData[]) =>
-      shuffled.reduce(
-        (groups, userData) =>
-          sortGroupsByPreference(userData, groups, options).reduce((groups, currentGroup) => {
-            if (groups.some((group) => group.users.includes(userData.id))) {
-              return groups
-            } else if (
-              currentGroup.users.length < options.groupSize &&
-              currentGroup.users.every(
-                (member) => !getById(options.data, member)!.unwanted.includes(userData.id)
-              )
-            ) {
-              return groupsUpdate(
-                groups,
-                balanceGender(
-                  { ...currentGroup, users: [...currentGroup.users, userData.id] },
-                  getById(options.data, userData.id)!.gender,
-                  options
+    reduce(
+      (groups, userData: UserData) =>
+        sortGroupsByPreference(userData, groups, options).reduce(
+          (groups, currentGroup) =>
+            groups.some((group) => group.users.includes(userData.id))
+              ? groups
+              : currentGroup.users.length < options.groupSize &&
+                currentGroup.users.every(
+                  (member) => !getById(options.data, member)!.unwanted.includes(userData.id)
                 )
-              )
-            } else if (groupWantsUser(userData.id, currentGroup, options)) {
-              return groupsUpdate(
-                groups,
-                balanceGender(
-                  {
-                    ...currentGroup,
-                    users: [
-                      ...without(
-                        [getGroupLessWantedUser(userData.id, currentGroup, options)!],
-                        currentGroup.users
-                      ),
-                      userData.id,
-                    ],
-                  },
-                  getById(options.data, userData.id)!.gender,
-                  options
+              ? groupsUpdate(
+                  groups,
+                  balanceGender(
+                    { ...currentGroup, users: [...currentGroup.users, userData.id] },
+                    getById(options.data, userData.id)!.gender,
+                    options
+                  )
                 )
-              )
-            } else {
-              return groups
-            }
-          }, groups),
-        initial
-      ),
+              : groupWantsUser(userData.id, currentGroup, options)
+              ? groupsUpdate(
+                  groups,
+                  balanceGender(
+                    {
+                      ...currentGroup,
+                      users: [
+                        ...without(
+                          [getGroupLessWantedUser(userData.id, currentGroup, options)!],
+                          currentGroup.users
+                        ),
+                        userData.id,
+                      ],
+                    },
+                    getById(options.data, userData.id)!.gender,
+                    options
+                  )
+                )
+              : groups,
+          groups
+        ),
+      initial
+    ),
     withUnusedUsers(options)
   )(options.data)
 
