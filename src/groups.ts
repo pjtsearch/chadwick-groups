@@ -302,10 +302,7 @@ export const getGroupLessWantedUser = curry(
       }))
       .filter(({ rank }) => rank < 0)
       // Sort from lowest to highest score -- most wanted replaced group to least wanted
-      .reduce<{ member: string; rank: number } | null>(
-        (last, curr) => (last ? (curr.rank < last.rank ? curr : last) : curr),
-        null
-      )?.member
+      .sort(({ rank }, { rank: otherRank }) => rank - otherRank)?.[0]?.member
 )
 
 /**
