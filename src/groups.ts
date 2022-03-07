@@ -1,4 +1,4 @@
-import { map, flatMap, flow, mean, range, shuffle, without, reduce } from "lodash/fp"
+import { map, flatMap, flow, mean, range, shuffle, without, reduce, curry } from "lodash/fp"
 
 /**
  * Type for gender
@@ -114,10 +114,9 @@ const isWanted = (byPrefs: UserData) => (user: UserId) => byPrefs.wanted.include
  * @param user The user to check
  * @returns A function that returns whether a user is of a certain gender
  */
-const isGender =
-  (gender: Gender, { data }: Options) =>
-  (user: UserId) =>
-    getById(data, user)!.gender == gender
+const isGender = curry(
+  (gender: Gender, { data }: Options, user: UserId) => getById(data, user)!.gender == gender
+)
 
 /**
  * Gets the unused users in a set of groups
@@ -144,12 +143,12 @@ const sortGroupsByLength = (groups: Group[]) =>
  * @param groups The groups to look through
  * @returns The amount of users that have people have people they want in their group
  */
-export const getWantedAmount =
-  ({ data }: Options) =>
-  (groups: Group[]) =>
+export const getWantedAmount = curry(
+  ({ data }: Options, groups: Group[]) =>
     groups.flatMap((group) =>
       group.users.filter((user) => group.users.some(isWanted(getById(data, user)!)))
     ).length
+)
 
 /**
  * Gets how many users have people have at least one person they want in their group
@@ -157,14 +156,14 @@ export const getWantedAmount =
  * @param groups The groups to look through
  * @returns The amount of users that have people have people they want in their group
  */
-export const getUnwantedAmount =
-  ({ data }: Options) =>
-  (groups: Group[]) =>
+export const getUnwantedAmount = curry(
+  ({ data }: Options, groups: Group[]) =>
     groups.flatMap((group) =>
       group.users.filter((user) =>
         group.users.some((otherUser) => getById(data, user)!.unwanted.includes(otherUser))
       )
     ).length
+)
 
 // Higher is more wanted
 /**
@@ -175,18 +174,17 @@ export const getUnwantedAmount =
  * @param member The member to get the score of
  * @returns How much other users prefer a group without this member compared to one with them
  */
-export const getGroupScore =
-  (options: Options) =>
-  (group: Group, member: UserId): number =>
-    without([member], group.users).reduce(
-      (score, otherMember) =>
-        score +
-        compareGroupsByPreference(getById(options.data, otherMember)!, options)(
-          { ...group, users: without([member], group.users) },
-          group
-        ),
-      0
-    )
+export const getGroupScore = curry((options: Options, group: Group, member: UserId): number =>
+  without([member], group.users).reduce(
+    (score, otherMember) =>
+      score +
+      compareGroupsByPreference(getById(options.data, otherMember)!, options)(
+        { ...group, users: without([member], group.users) },
+        group
+      ),
+    0
+  )
+)
 
 /**
  * Sorts group members by their group score
@@ -194,11 +192,12 @@ export const getGroupScore =
  * @param group Groups to sort members
  * @returns The group members by their group score
  */
-const sortByGroupScore = (options: Options) => (group: Group) =>
+const sortByGroupScore = curry((options: Options, group: Group) =>
   group.users.sort(
     (member, otherMember) =>
-      getGroupScore(options)(group, otherMember) - getGroupScore(options)(group, member)
+      getGroupScore(options, group, otherMember) - getGroupScore(options)(group, member)
   )
+)
 
 /**
  * Gets the average of the array items, or 0 if 0 length
@@ -214,20 +213,18 @@ export const avgWithoutZero = (array: number[]) =>
  * @param groups The groups to check from
  * @returns The amount of wanted per user
  */
-export const wantedPerUser =
-  ({ data }: Options) =>
-  (groups: Group[]) =>
-    flow(
-      flatMap((group: Group) =>
-        group.users.map((user) =>
-          without([user], group.users).filter((otherUser) =>
-            data.find((u) => u.id == user)?.wanted.includes(otherUser)
-          )
+export const wantedPerUser = curry(({ data }: Options, groups: Group[]) =>
+  flow(
+    flatMap((group: Group) =>
+      group.users.map((user) =>
+        without([user], group.users).filter((otherUser) =>
+          data.find((u) => u.id == user)?.wanted.includes(otherUser)
         )
-      ),
-      map((wanted: UserId[]) => wanted.length)
-    )(groups)
-
+      )
+    ),
+    map((wanted: UserId[]) => wanted.length)
+  )(groups)
+)
 /**
  * Gets the group with the correct number of a gender
  * Removes the least wanted users of a certain gender until they are less than or
@@ -237,22 +234,20 @@ export const wantedPerUser =
  * @param gender The gender to balance
  * @returns The group with the correct number of a gender
  */
-export const balanceGender =
-  (options: Options) =>
-  (group: Group, gender: Gender): Group => {
-    if (group.users.filter(isGender(gender, options)).length > Math.floor(options.groupSize / 2)) {
-      const leastWanted = sortByGroupScore(options)({
-        ...group,
-        users: group.users.filter(isGender(gender, options)),
-      })
-      return balanceGender(options)(
-        { ...group, users: without([leastWanted.at(-1)!], group.users) },
-        gender
-      )
-    }
-    return group
+export const balanceGender = curry((options: Options, group: Group, gender: Gender): Group => {
+  if (group.users.filter(isGender(gender, options)).length > Math.floor(options.groupSize / 2)) {
+    const leastWanted = sortByGroupScore(options, {
+      ...group,
+      users: group.users.filter(isGender(gender, options)),
+    })
+    return balanceGender(
+      options,
+      { ...group, users: without([leastWanted.at(-1)!], group.users) },
+      gender
+    )
   }
-
+  return group
+})
 /**
  * Gets if a new user is wanted more than any other user
  * Gets if a group with the new user replacing another user compares better to the original group
@@ -261,23 +256,24 @@ export const balanceGender =
  * @param group The group to check
  * @returns If a new user is wanted more than any other user
  */
-export const groupWantsUser =
-  (options: Options) =>
-  (newUser: UserId, group: Group): boolean =>
-    group.users
-      .map((member) =>
-        // The total compare score of all of the users
-        without([member], group.users).reduce(
-          (score, otherMember) =>
-            score +
-            compareGroupsByPreference(getById(options.data, otherMember)!, options)(
-              { ...group, users: [...without([member], group.users), newUser] },
-              group
-            ),
-          0
-        )
+export const groupWantsUser = curry((options: Options, newUser: UserId, group: Group): boolean =>
+  group.users
+    .map((member) =>
+      // The total compare score of all of the users
+      without([member], group.users).reduce(
+        (score, otherMember) =>
+          score +
+          compareGroupsByPreference(
+            getById(options.data, otherMember)!,
+            options,
+            { ...group, users: [...without([member], group.users), newUser] },
+            group
+          ),
+        0
       )
-      .some((rank) => rank < 0)
+    )
+    .some((rank) => rank < 0)
+)
 
 /**
  * Gets the user who is less wanted than a new user or undefined if there isn't one
@@ -286,9 +282,8 @@ export const groupWantsUser =
  * @param group The group to check
  * @returns The user who is less wanted than a new user or undefined if there isn't one
  */
-export const getGroupLessWantedUser =
-  (options: Options) =>
-  (newUser: UserId, group: Group): UserId | undefined =>
+export const getGroupLessWantedUser = curry(
+  (options: Options, newUser: UserId, group: Group): UserId | undefined =>
     group.users
       .map((member) => ({
         member,
@@ -296,7 +291,9 @@ export const getGroupLessWantedUser =
         rank: group.users.reduce(
           (score, otherMember) =>
             score +
-            compareGroupsByPreference(getById(options.data, otherMember)!, options)(
+            compareGroupsByPreference(
+              getById(options.data, otherMember)!,
+              options,
               { ...group, users: [...without([member], group.users), newUser] },
               group
             ),
@@ -309,6 +306,7 @@ export const getGroupLessWantedUser =
         (last, curr) => (last ? (curr.rank < last.rank ? curr : last) : curr),
         null
       )?.member
+)
 
 /**
  * Compares group to be sorted from most to least liked
@@ -319,9 +317,8 @@ export const getGroupLessWantedUser =
  * @returns A negative if the first group is more preferred, 0 if equal,
  * or positive if other group is preferred
  */
-export const compareGroupsByPreference =
-  (prefs: UserData, { desiredWantedAmount }: Options) =>
-  (group: Group, otherGroup: Group) =>
+export const compareGroupsByPreference = curry(
+  (prefs: UserData, { desiredWantedAmount }: Options, group: Group, otherGroup: Group) =>
     (group.users.filter(isUnwanted(prefs)).length -
       otherGroup.users.filter(isUnwanted(prefs)).length) *
       2000 +
@@ -331,7 +328,7 @@ export const compareGroupsByPreference =
     (otherGroup.users.filter(isWanted(prefs)).length > 0 ? 3 : -3) +
     (group.users.filter(isWanted(prefs)).length == desiredWantedAmount ? -6 : 6) +
     (otherGroup.users.filter(isWanted(prefs)).length == desiredWantedAmount ? 6 : -6)
-
+)
 /**
  * Sorts groups by preference
  * @param options The groups options
@@ -339,8 +336,9 @@ export const compareGroupsByPreference =
  * @param groups The groups to sort
  * @returns The sorted ids of the groups
  */
-const sortGroupsByPreference = (options: Options) => (prefs: UserData, groups: Group[]) =>
+const sortGroupsByPreference = curry((options: Options, prefs: UserData, groups: Group[]) =>
   groups.sort(compareGroupsByPreference(prefs, options))
+)
 
 /**
  * Gets the desired groups
@@ -360,52 +358,53 @@ const sortGroupsByPreference = (options: Options) => (prefs: UserData, groups: G
  * @param initial The initial groups
  * @returns Groups with all users
  */
-const getGroups =
-  (options: Options) =>
-  (initial: Group[]): Group[] =>
-    flow(
-      shuffle,
-      reduce(
-        (groups, userData: UserData) =>
-          sortGroupsByPreference(options)(userData, groups).reduce(
-            (groups, currentGroup) =>
-              groups.some((group) => group.users.includes(userData.id))
-                ? groups
-                : currentGroup.users.length < options.groupSize &&
-                  currentGroup.users.every(
-                    (member) => !getById(options.data, member)!.unwanted.includes(userData.id)
+const getGroups = curry((options: Options, initial: Group[]): Group[] =>
+  flow(
+    shuffle,
+    reduce(
+      (groups, userData: UserData) =>
+        sortGroupsByPreference(options, userData, groups).reduce(
+          (groups, currentGroup) =>
+            groups.some((group) => group.users.includes(userData.id))
+              ? groups
+              : currentGroup.users.length < options.groupSize &&
+                currentGroup.users.every(
+                  (member) => !getById(options.data, member)!.unwanted.includes(userData.id)
+                )
+              ? groupsUpdate(
+                  groups,
+                  balanceGender(
+                    options,
+                    { ...currentGroup, users: [...currentGroup.users, userData.id] },
+                    getById(options.data, userData.id)!.gender
                   )
-                ? groupsUpdate(
-                    groups,
-                    balanceGender(options)(
-                      { ...currentGroup, users: [...currentGroup.users, userData.id] },
-                      getById(options.data, userData.id)!.gender
-                    )
+                )
+              : groupWantsUser(options, userData.id, currentGroup)
+              ? groupsUpdate(
+                  groups,
+                  balanceGender(
+                    options,
+                    {
+                      ...currentGroup,
+                      users: [
+                        ...without(
+                          [getGroupLessWantedUser(options, userData.id, currentGroup)!],
+                          currentGroup.users
+                        ),
+                        userData.id,
+                      ],
+                    },
+                    getById(options.data, userData.id)!.gender
                   )
-                : groupWantsUser(options)(userData.id, currentGroup)
-                ? groupsUpdate(
-                    groups,
-                    balanceGender(options)(
-                      {
-                        ...currentGroup,
-                        users: [
-                          ...without(
-                            [getGroupLessWantedUser(options)(userData.id, currentGroup)!],
-                            currentGroup.users
-                          ),
-                          userData.id,
-                        ],
-                      },
-                      getById(options.data, userData.id)!.gender
-                    )
-                  )
-                : groups,
-            groups
-          ),
-        initial
-      ),
-      withUnusedUsers(options)
-    )(options.data)
+                )
+              : groups,
+          groups
+        ),
+      initial
+    ),
+    withUnusedUsers(options)
+  )(options.data)
+)
 
 /**
  * Adds unused users
@@ -420,68 +419,58 @@ const getGroups =
  * @param initial The initial groups
  * @returns The group with unused users added
  */
-export const withUnusedUsers =
-  (options: Options) =>
-  (initial: Group[]): Group[] => {
-    const addUsersWithConstraints =
-      (constraints: (group: Group, userId: UserId) => boolean) => (initial: Group[]) =>
-        getUnusedUsers(initial, options.data).reduce(
-          (groups, { id: userId }) =>
-            sortGroupsByLength(groups).reduce(
-              (groups, currentGroup) =>
-                // Skip if already included
-                groups.some(({ users }) => users.includes(userId))
-                  ? groups
-                  : constraints(currentGroup, userId)
-                  ? groupsUpdate(groups, {
-                      ...currentGroup,
-                      users: [...currentGroup.users, userId],
-                    })
-                  : groups,
-              groups
-            ),
-          initial
-        )
+export const withUnusedUsers = curry((options: Options, initial: Group[]): Group[] => {
+  const addUsersWithConstraints =
+    (constraints: (group: Group, userId: UserId) => boolean) => (initial: Group[]) =>
+      getUnusedUsers(initial, options.data).reduce(
+        (groups, { id: userId }) =>
+          sortGroupsByLength(groups).reduce(
+            (groups, currentGroup) =>
+              // Skip if already included
+              groups.some(({ users }) => users.includes(userId))
+                ? groups
+                : constraints(currentGroup, userId)
+                ? groupsUpdate(groups, {
+                    ...currentGroup,
+                    users: [...currentGroup.users, userId],
+                  })
+                : groups,
+            groups
+          ),
+        initial
+      )
 
-    return flow(
-      // Without conflict
-      addUsersWithConstraints(
-        (group, userId) =>
-          group.users.length < options.groupSize &&
-          group.users.every(
-            (member) => !getById(options.data, member)!.unwanted.includes(userId)
-          ) &&
-          group.users.every(
-            (member) => !getById(options.data, userId)!.unwanted.includes(member)
-          ) &&
-          group.users.filter(isGender(getById(options.data, userId)!.gender, options)).length <
-            Math.floor(options.groupSize / 2)
-      ),
-      // With gender conflict
-      addUsersWithConstraints(
-        (group, userId) =>
-          group.users.length < options.groupSize &&
-          group.users.every(
-            (member) => !getById(options.data, member)!.unwanted.includes(userId)
-          ) &&
-          group.users.every((member) => !getById(options.data, userId)!.unwanted.includes(member))
-      ),
-      // With length conflict
-      addUsersWithConstraints(
-        (group, userId) =>
-          group.users.every(
-            (member) => !getById(options.data, member)!.unwanted.includes(userId)
-          ) &&
-          group.users.every((member) => !getById(options.data, userId)!.unwanted.includes(member))
-      ),
-      // Wanted conflict
-      addUsersWithConstraints((group, userId) =>
+  return flow(
+    // Without conflict
+    addUsersWithConstraints(
+      (group, userId) =>
+        group.users.length < options.groupSize &&
+        group.users.every((member) => !getById(options.data, member)!.unwanted.includes(userId)) &&
+        group.users.every((member) => !getById(options.data, userId)!.unwanted.includes(member)) &&
+        group.users.filter(isGender(getById(options.data, userId)!.gender, options)).length <
+          Math.floor(options.groupSize / 2)
+    ),
+    // With gender conflict
+    addUsersWithConstraints(
+      (group, userId) =>
+        group.users.length < options.groupSize &&
+        group.users.every((member) => !getById(options.data, member)!.unwanted.includes(userId)) &&
         group.users.every((member) => !getById(options.data, userId)!.unwanted.includes(member))
-      ),
-      // Add all others
-      addUsersWithConstraints((_group, _userId) => true)
-    )(initial)
-  }
+    ),
+    // With length conflict
+    addUsersWithConstraints(
+      (group, userId) =>
+        group.users.every((member) => !getById(options.data, member)!.unwanted.includes(userId)) &&
+        group.users.every((member) => !getById(options.data, userId)!.unwanted.includes(member))
+    ),
+    // Wanted conflict
+    addUsersWithConstraints((group, userId) =>
+      group.users.every((member) => !getById(options.data, userId)!.unwanted.includes(member))
+    ),
+    // Add all others
+    addUsersWithConstraints((_group, _userId) => true)
+  )(initial)
+})
 
 /**
  * Gets a group set score based on:
@@ -494,31 +483,33 @@ export const withUnusedUsers =
  * @param otherGroups The group set to compare with
  * @returns The group score (lower is better)
  */
-const getGroupSetScore = (options: Options) => (groups: Group[], otherGroups: Group[]) =>
-  (getUnwantedAmount(options)(groups) <= getUnwantedAmount(options)(otherGroups) ? -1000 : 1000) +
-  (wantedPerUser(options)(groups) >= wantedPerUser(options)(otherGroups) ? -50 : 50) +
-  (Math.abs(options.desiredWantedAmount - avgWithoutZero(wantedPerUser(options)(groups))) <
-  Math.abs(options.desiredWantedAmount - avgWithoutZero(wantedPerUser(options)(otherGroups)))
-    ? -60
-    : 60) +
-  (wantedPerUser(options)(groups).filter((a) => a == 0) <
-  wantedPerUser(options)(otherGroups).filter((a) => a == 0)
-    ? -310
-    : 310) +
-  (groups.flatMap((g: Group) => g.users).length > 0 ? -2000 : 2000) +
-  (groups.flatMap((g: Group) => g.users).length > 0 &&
-  otherGroups.flatMap((g: Group) => g.users).length == 0
-    ? -3000
-    : 3000)
-
+const getGroupSetScore = curry(
+  (options: Options, groups: Group[], otherGroups: Group[]) =>
+    (getUnwantedAmount(options, groups) <= getUnwantedAmount(options, otherGroups) ? -1000 : 1000) +
+    (wantedPerUser(options, groups) >= wantedPerUser(options, otherGroups) ? -50 : 50) +
+    (Math.abs(options.desiredWantedAmount - avgWithoutZero(wantedPerUser(options, groups))) <
+    Math.abs(options.desiredWantedAmount - avgWithoutZero(wantedPerUser(options, otherGroups)))
+      ? -60
+      : 60) +
+    (wantedPerUser(options, groups).filter((a) => a == 0) <
+    wantedPerUser(options, otherGroups).filter((a) => a == 0)
+      ? -310
+      : 310) +
+    (groups.flatMap((g: Group) => g.users).length > 0 ? -2000 : 2000) +
+    (groups.flatMap((g: Group) => g.users).length > 0 &&
+    otherGroups.flatMap((g: Group) => g.users).length == 0
+      ? -3000
+      : 3000)
+)
 /**
  * Sorts sets of groups (from best to worst) based on the {@link getGroupSetScore group set score}
  * @param options The groups options
  * @param groupSets Sets of groups
  * @returns The sorted sets of groups
  */
-const sortGroupSets = (options: Options) => (groupSets: Group[][]) =>
+const sortGroupSets = curry((options: Options, groupSets: Group[][]) =>
   groupSets.sort(getGroupSetScore(options))
+)
 
 /**
  * Tries getting groups multiple times, then finds the best group based on the {@link getGroupSetScore group set score}
@@ -529,7 +520,7 @@ const sortGroupSets = (options: Options) => (groupSets: Group[][]) =>
  */
 export const getGroupsIterations = (iterations: number, options: Options): Group[] =>
   flow(
-    map(() => getGroups(options)(options.initial)),
+    map(() => getGroups(options, options.initial)),
     sortGroupSets(options),
     (g) => g[0]
   )(range(0)(iterations))
