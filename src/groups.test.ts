@@ -194,8 +194,8 @@ test("Should add unused users", () => {
       ]
     )
   ).toEqual([
-    { id: "a", users: ["a", "c"] },
     { id: "b", users: ["b", "d"] },
+    { id: "a", users: ["a", "c"] },
   ])
 
   expect(
@@ -219,7 +219,7 @@ test("Should add unused users", () => {
       ]
     )
   ).toEqual([
-    { id: "b", users: ["b", "d", "e", "g"] },
     { id: "a", users: ["a", "c", "f", "h"] },
+    { id: "b", users: ["b", "d", "e", "g"] },
   ])
 })

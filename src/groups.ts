@@ -88,10 +88,8 @@ const getById = <T extends { id: string }>(items: T[], id: string): T | undefine
  * @param updatedGroup The updated group
  * @returns A group with the updated group replacing the old group
  */
-const groupsUpdate = (groups: Group[], updatedGroup: Group): Group[] => [
-  ...groups.filter(({ id }) => id != updatedGroup.id),
-  updatedGroup,
-]
+const groupsUpdate = (groups: Group[], updatedGroup: Group): Group[] =>
+  groups.map((group) => (group.id == updatedGroup.id ? updatedGroup : group))
 
 /**
  * Returns function that finds if another user is unwanted by certain prefs
