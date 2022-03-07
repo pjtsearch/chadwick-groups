@@ -79,7 +79,7 @@ test("Should have no unwanted", () => {
 test("Should have enough wanted", () => {
   range(0)(10).forEach(() => {
     const res = getGroupsIterations(30, options)
-    expect(getWantedAmount(res, options)).toBeGreaterThanOrEqual(
+    expect(getWantedAmount(options)(res)).toBeGreaterThanOrEqual(
       res.flatMap(({ users }) => users).length / 1.3
     )
   })
@@ -87,7 +87,7 @@ test("Should have enough wanted", () => {
 
 test("Should have enough wanted per user", () => {
   range(0)(10).forEach(() => {
-    const wanted = wantedPerUser(getGroupsIterations(100, options), options)
+    const wanted = wantedPerUser(options)(getGroupsIterations(100, options))
     const res = avgWithoutZero(wanted)
     expect(res).toBeLessThanOrEqual(1.75)
     expect(res).toBeGreaterThanOrEqual(0.9)
@@ -116,63 +116,57 @@ test("Should have gender balance", () => {
 })
 
 test("Should get wanted amount", () => {
-  expect(getWantedAmount([{ id: "a", users: ["a", "b", "c"] }], options)).toBe(2)
+  expect(getWantedAmount(options)([{ id: "a", users: ["a", "b", "c"] }])).toBe(2)
 })
 
 test("Should get unwanted amount", () => {
-  expect(getUnwantedAmount([{ id: "a", users: ["a", "b", "c"] }], options)).toBe(2)
+  expect(getUnwantedAmount(options)([{ id: "a", users: ["a", "b", "c"] }])).toBe(2)
 })
 
 test("Should get correct group score", () => {
-  expect(getGroupScore({ id: "a", users: ["a", "b", "c"] }, "b", options)).toBe(-2012)
-  expect(getGroupScore({ id: "a", users: ["a", "b", "c"] }, "a", options)).toBe(-1982)
-  expect(getGroupScore({ id: "a", users: ["a", "b", "c"] }, "c", options)).toBe(-2012)
+  expect(getGroupScore(options)({ id: "a", users: ["a", "b", "c"] }, "b")).toBe(-2012)
+  expect(getGroupScore(options)({ id: "a", users: ["a", "b", "c"] }, "a")).toBe(-1982)
+  expect(getGroupScore(options)({ id: "a", users: ["a", "b", "c"] }, "c")).toBe(-2012)
 })
 
 test("Should balance gender", () => {
-  expect(balanceGender({ id: "a", users: ["a", "b", "c"] }, "female", options)).toEqual({
+  expect(balanceGender(options)({ id: "a", users: ["a", "b", "c"] }, "female")).toEqual({
     id: "a",
     users: ["a", "b", "c"],
   })
-  expect(balanceGender({ id: "a", users: ["a", "b", "c"] }, "male", options)).toEqual({
+  expect(balanceGender(options)({ id: "a", users: ["a", "b", "c"] }, "male")).toEqual({
     id: "a",
     users: ["a", "b"],
   })
 })
 
 test("Should get if group wants user", () => {
-  expect(groupWantsUser("f", { id: "a", users: ["a", "b", "c"] }, options)).toBe(true)
-  expect(getGroupLessWantedUser("f", { id: "a", users: ["a", "b", "c"] }, options)).toBe("b")
-  expect(groupWantsUser("d", { id: "a", users: ["a", "b", "c"] }, options)).toBe(true)
-  expect(getGroupLessWantedUser("d", { id: "a", users: ["a", "b", "c"] }, options)).toBe("a")
-  expect(groupWantsUser("e", { id: "a", users: ["a", "b", "c"] }, options)).toBe(true)
-  expect(getGroupLessWantedUser("e", { id: "a", users: ["a", "b", "c"] }, options)).toBe("a")
+  expect(groupWantsUser(options)("f", { id: "a", users: ["a", "b", "c"] })).toBe(true)
+  expect(getGroupLessWantedUser(options)("f", { id: "a", users: ["a", "b", "c"] })).toBe("b")
+  expect(groupWantsUser(options)("d", { id: "a", users: ["a", "b", "c"] })).toBe(true)
+  expect(getGroupLessWantedUser(options)("d", { id: "a", users: ["a", "b", "c"] })).toBe("a")
+  expect(groupWantsUser(options)("e", { id: "a", users: ["a", "b", "c"] })).toBe(true)
+  expect(getGroupLessWantedUser(options)("e", { id: "a", users: ["a", "b", "c"] })).toBe("a")
 })
 
 test("Should compare groups by preference", () => {
   expect(
     compareGroupsByPreference(
       { id: "test", wanted: ["a", "b", "c"], unwanted: ["d", "e", "f"], gender: "male" },
-      { id: "testGroup", users: ["a", "b", "d"] },
-      { id: "testGroup", users: ["a", "b", "e"] },
       options
-    )
+    )({ id: "testGroup", users: ["a", "b", "d"] }, { id: "testGroup", users: ["a", "b", "e"] })
   ).toBe(0)
   expect(
     compareGroupsByPreference(
       { id: "test", wanted: ["a", "b", "c"], unwanted: ["d", "e", "f"], gender: "male" },
-      { id: "testGroup", users: ["a", "b", "d"] },
-      { id: "testGroup", users: ["a", "b", "c"] },
       options
-    )
+    )({ id: "testGroup", users: ["a", "b", "d"] }, { id: "testGroup", users: ["a", "b", "c"] })
   ).toBe(1998)
   expect(
     compareGroupsByPreference(
       { id: "test", wanted: ["a", "b", "c"], unwanted: ["d", "e", "f"], gender: "male" },
-      { id: "testGroup", users: ["a", "b", "d"] },
-      { id: "testGroup", users: ["a", "e", "d"] },
       options
-    )
+    )({ id: "testGroup", users: ["a", "b", "d"] }, { id: "testGroup", users: ["a", "e", "d"] })
   ).toBe(-1988)
 })
 
