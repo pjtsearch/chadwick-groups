@@ -89,7 +89,7 @@ test("Should have enough wanted per user", () => {
   range(0)(10).forEach(() => {
     const wanted = wantedPerUser(options, getGroupsIterations(100, options))
     const res = avgWithoutZero(wanted)
-    expect(res).toBeLessThanOrEqual(1.75)
+    expect(res).toBeLessThanOrEqual(2)
     expect(res).toBeGreaterThanOrEqual(0.9)
     expect(wanted.filter((a) => a == 0).length).toBeLessThanOrEqual(2)
   })
