@@ -111,6 +111,7 @@ const isWanted = (byPrefs: UserData) => (user: UserId) => byPrefs.wanted.include
  * Returns function that finds if a user is of a certain gender
  * @param gender The gender to determine by
  * @param options The groups options
+ * @param user The user to check
  * @returns A function that returns whether a user is of a certain gender
  */
 const isGender =
@@ -139,8 +140,8 @@ const sortGroupsByLength = (groups: Group[]) =>
 
 /**
  * Gets how many users have people have at least one person they want in their group
- * @param groups The groups to look through
  * @param options The groups options
+ * @param groups The groups to look through
  * @returns The amount of users that have people have people they want in their group
  */
 export const getWantedAmount =
@@ -152,8 +153,8 @@ export const getWantedAmount =
 
 /**
  * Gets how many users have people have at least one person they want in their group
- * @param groups The groups to look through
  * @param options The groups options
+ * @param groups The groups to look through
  * @returns The amount of users that have people have people they want in their group
  */
 export const getUnwantedAmount =
@@ -169,9 +170,9 @@ export const getUnwantedAmount =
 /**
  * Gets how much other users prefer a group without this member compared to one with them,
  * lower means the group prefers the group without this member
+ * @param options The groups options
  * @param group The group to get prefs from
  * @param member The member to get the score of
- * @param options The groups options
  * @returns How much other users prefer a group without this member compared to one with them
  */
 export const getGroupScore =
@@ -189,8 +190,8 @@ export const getGroupScore =
 
 /**
  * Sorts group members by their group score
- * @param group Groups to sort members
  * @param options The groups options
+ * @param group Groups to sort members
  * @returns The group members by their group score
  */
 const sortByGroupScore = (options: Options) => (group: Group) =>
@@ -209,8 +210,8 @@ export const avgWithoutZero = (array: number[]) =>
 
 /**
  * Gets the average number of wanted people for each user
- * @param groups The groups to check from
  * @param options The groups options
+ * @param groups The groups to check from
  * @returns The amount of wanted per user
  */
 export const wantedPerUser =
@@ -231,9 +232,9 @@ export const wantedPerUser =
  * Gets the group with the correct number of a gender
  * Removes the least wanted users of a certain gender until they are less than or
  * equal to half of the desired group size
+ * @param options The groups options
  * @param group The group to balance
  * @param gender The gender to balance
- * @param options The groups options
  * @returns The group with the correct number of a gender
  */
 export const balanceGender =
@@ -255,9 +256,9 @@ export const balanceGender =
 /**
  * Gets if a new user is wanted more than any other user
  * Gets if a group with the new user replacing another user compares better to the original group
+ * @param options The groups options
  * @param newUser The new user
  * @param group The group to check
- * @param options The groups options
  * @returns If a new user is wanted more than any other user
  */
 export const groupWantsUser =
@@ -280,9 +281,9 @@ export const groupWantsUser =
 
 /**
  * Gets the user who is less wanted than a new user or undefined if there isn't one
+ * @param options The groups options
  * @param newUser The new user
  * @param group The group to check
- * @param options The groups options
  * @returns The user who is less wanted than a new user or undefined if there isn't one
  */
 export const getGroupLessWantedUser =
@@ -312,9 +313,9 @@ export const getGroupLessWantedUser =
 /**
  * Compares group to be sorted from most to least liked
  * @param prefs The prefs to use
+ * @param options The groups options
  * @param group A group
  * @param otherGroup A group to compare with
- * @param options The groups options
  * @returns A negative if the first group is more preferred, 0 if equal,
  * or positive if other group is preferred
  */
@@ -333,9 +334,9 @@ export const compareGroupsByPreference =
 
 /**
  * Sorts groups by preference
+ * @param options The groups options
  * @param prefs The preference to sort by
  * @param groups The groups to sort
- * @param options The groups options
  * @returns The sorted ids of the groups
  */
 const sortGroupsByPreference = (options: Options) => (prefs: UserData, groups: Group[]) =>
@@ -355,8 +356,8 @@ const sortGroupsByPreference = (options: Options) => (prefs: UserData, groups: G
  *             - Otherwise, return the old groups
  * - Adds the unused users ({@link withUnusedUsers})
  *
- * @param initial The initial groups
  * @param options The groups options
+ * @param initial The initial groups
  * @returns Groups with all users
  */
 const getGroups =
@@ -488,9 +489,9 @@ export const withUnusedUsers =
  * - The difference from the desired group size
  * - The least amount of users with no wanted
  * - Not having 0 length
+ * @param options The groups options
  * @param groups The group set
  * @param otherGroups The group set to compare with
- * @param options The groups options
  * @returns The group score (lower is better)
  */
 const getGroupSetScore = (options: Options) => (groups: Group[], otherGroups: Group[]) =>
@@ -512,8 +513,8 @@ const getGroupSetScore = (options: Options) => (groups: Group[], otherGroups: Gr
 
 /**
  * Sorts sets of groups (from best to worst) based on the {@link getGroupSetScore group set score}
- * @param groupSets Sets of groups
  * @param options The groups options
+ * @param groupSets Sets of groups
  * @returns The sorted sets of groups
  */
 const sortGroupSets = (options: Options) => (groupSets: Group[][]) =>
