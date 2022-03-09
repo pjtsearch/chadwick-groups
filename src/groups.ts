@@ -286,7 +286,7 @@ export const getGroupLessWantedUser = curry(
       .map((member) => ({
         member,
         // Sum of comparing group to group with user replaced
-        rank: group.users.reduce(
+        rank: without([member], group.users).reduce(
           (score, otherMember) =>
             score +
             compareGroupsByPreference(
