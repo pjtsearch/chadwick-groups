@@ -246,6 +246,36 @@ test("Should add unused users", () => {
     { id: "a", users: ["a", "c", "f", "h"] },
     { id: "b", users: ["b", "d", "e", "g"] },
   ])
+
+  expect(
+    withUnusedUsers(
+      {
+        ...options,
+        data: [
+          { id: "a", unwanted: ["b"], wanted: [], gender: "male" },
+          { id: "b", unwanted: [], wanted: [], gender: "female" },
+          { id: "c", unwanted: ["d"], wanted: [], gender: "male" },
+          { id: "d", unwanted: [], wanted: [], gender: "female" },
+        ],
+      },
+      [{ id: "a", users: ["a"] }]
+    )
+  ).toEqual([{ id: "a", users: ["a", "c", "b", "d"] }])
+
+  expect(
+    withUnusedUsers(
+      {
+        ...options,
+        data: [
+          { id: "a", unwanted: ["b"], wanted: [], gender: "male" },
+          { id: "b", unwanted: [], wanted: [], gender: "female" },
+          { id: "c", unwanted: ["d"], wanted: [], gender: "male" },
+          { id: "d", unwanted: [], wanted: [], gender: "female" },
+        ],
+      },
+      [{ id: "a", users: [] }]
+    )
+  ).toEqual([{ id: "a", users: [] }])
 })
 
 test("Should get unused users", () => {
