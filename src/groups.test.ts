@@ -129,6 +129,12 @@ test("Should get correct group score", () => {
   expect(getGroupScore(options, { id: "a", users: ["a", "b", "c"] }, "b")).toBe(-2012)
   expect(getGroupScore(options, { id: "a", users: ["a", "b", "c"] }, "a")).toBe(-1982)
   expect(getGroupScore(options, { id: "a", users: ["a", "b", "c"] }, "c")).toBe(-2012)
+  expect(getGroupScore(options, { id: "a", users: ["d", "h", "l"] }, "d")).toBe(-1982)
+  expect(getGroupScore(options, { id: "a", users: ["d", "h", "l"] }, "h")).toBe(0)
+  expect(getGroupScore(options, { id: "a", users: ["d", "h", "l"] }, "l")).toBe(0)
+  expect(getGroupScore(options, { id: "a", users: ["d", "j", "l"] }, "d")).toBe(18)
+  expect(getGroupScore(options, { id: "a", users: ["d", "j", "l"] }, "l")).toBe(0)
+  expect(getGroupScore(options, { id: "a", users: ["d", "j", "l"] }, "j")).toBe(0)
 })
 
 test("Should get correct group set score", () => {
