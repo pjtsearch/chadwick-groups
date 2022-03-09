@@ -15,6 +15,7 @@ import {
   withUnusedUsers,
   getGroupSetScore,
   getUnusedUsers,
+  getStatistics,
 } from "./groups"
 
 const options: Options = {
@@ -391,4 +392,42 @@ test("Should get unused users", () => {
     { id: "c", unwanted: ["d"], wanted: [], gender: "male" },
     { id: "d", unwanted: [], wanted: [], gender: "female" },
   ])
+})
+
+test("Should get statistics", () => {
+  expect(
+    getStatistics(
+      [
+        { id: "6", users: ["n", "h", "e", "q", "y"] },
+        { id: "3", users: ["m", "r", "b", "i"] },
+        { id: "4", users: ["v", "u", "d", "f"] },
+        { id: "1", users: ["a", "z", "x", "g"] },
+        { id: "5", users: ["t", "c", "p", "j"] },
+        { id: "2", users: ["o", "s", "l", "k", "w"] },
+      ],
+      options
+    )
+  ).toEqual({
+    unusedUsers: [],
+    unwantedAmount: 0,
+    wantedAmount: 25,
+    avgWantedPerUser: 1.3076923076923077,
+    usersWithNoWanted: 1,
+  })
+  expect(
+    getStatistics(
+      [
+        { id: "1", users: ["c", "l", "w", "m"] },
+        { id: "2", users: ["b", "e", "y", "k", "n"] },
+        { id: "3", users: ["a", "v", "g"] },
+      ],
+      options
+    )
+  ).toEqual({
+    unusedUsers: ["d", "f", "h", "i", "j", "o", "p", "q", "r", "s", "t", "u", "x", "z"],
+    unwantedAmount: 5,
+    wantedAmount: 8,
+    avgWantedPerUser: 0.75,
+    usersWithNoWanted: 4,
+  })
 })
