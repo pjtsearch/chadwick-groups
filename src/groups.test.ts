@@ -13,6 +13,7 @@ import {
   Options,
   wantedPerUser,
   withUnusedUsers,
+  getGroupSetScore,
 } from "./groups"
 
 const options: Options = {
@@ -127,6 +128,28 @@ test("Should get correct group score", () => {
   expect(getGroupScore(options, { id: "a", users: ["a", "b", "c"] }, "b")).toBe(-2012)
   expect(getGroupScore(options, { id: "a", users: ["a", "b", "c"] }, "a")).toBe(-1982)
   expect(getGroupScore(options, { id: "a", users: ["a", "b", "c"] }, "c")).toBe(-2012)
+})
+
+test("Should get correct group set score", () => {
+  expect(
+    getGroupSetScore(
+      options,
+      [
+        { id: "a", users: ["a", "b", "c"] },
+        { id: "b", users: ["n", "e", "d"] },
+        { id: "c", users: ["j", "m", "k"] },
+      ],
+      [{ id: "a", users: ["a", "b", "c"] }]
+    )
+  ).toBe(320)
+  expect(
+    getGroupSetScore(
+      options,
+      [{ id: "a", users: ["a", "b", "c"] }],
+      [{ id: "a", users: ["a", "b", "c"] }]
+    )
+  ).toBe(320)
+  expect(getGroupSetScore(options, [{ id: "a", users: ["a"] }], [])).toBe(-5680)
 })
 
 test("Should balance gender", () => {

@@ -478,7 +478,7 @@ export const withUnusedUsers = curry((options: Options, initial: Group[]): Group
  * @param otherGroups The group set to compare with
  * @returns The group score (lower is better)
  */
-const getGroupSetScore = curry(
+export const getGroupSetScore = curry(
   (options: Options, groups: Group[], otherGroups: Group[]) =>
     (getUnwantedAmount(options, groups) <= getUnwantedAmount(options, otherGroups) ? -1000 : 1000) +
     (wantedPerUser(options, groups) >= wantedPerUser(options, otherGroups) ? -50 : 50) +
