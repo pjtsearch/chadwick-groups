@@ -122,7 +122,7 @@ const isGender = curry(
  * @param data The data to get all users with
  * @returns The unused users
  */
-const getUnusedUsers = (groups: Group[], data: UserData[]) =>
+export const getUnusedUsers = (groups: Group[], data: UserData[]) =>
   data.filter((user) => !groups.some((group) => group.users.includes(user.id)))
 
 /**

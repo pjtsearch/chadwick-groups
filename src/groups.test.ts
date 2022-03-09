@@ -14,6 +14,7 @@ import {
   wantedPerUser,
   withUnusedUsers,
   getGroupSetScore,
+  getUnusedUsers,
 } from "./groups"
 
 const options: Options = {
@@ -244,5 +245,42 @@ test("Should add unused users", () => {
   ).toEqual([
     { id: "a", users: ["a", "c", "f", "h"] },
     { id: "b", users: ["b", "d", "e", "g"] },
+  ])
+})
+
+test("Should get unused users", () => {
+  expect(
+    getUnusedUsers(
+      [
+        { id: "a", users: ["a"] },
+        { id: "b", users: ["b"] },
+      ],
+      [
+        { id: "a", unwanted: ["b"], wanted: [], gender: "male" },
+        { id: "b", unwanted: [], wanted: [], gender: "female" },
+        { id: "c", unwanted: ["d"], wanted: [], gender: "male" },
+        { id: "d", unwanted: [], wanted: [], gender: "female" },
+      ]
+    )
+  ).toEqual([
+    { id: "c", unwanted: ["d"], wanted: [], gender: "male" },
+    { id: "d", unwanted: [], wanted: [], gender: "female" },
+  ])
+
+  expect(
+    getUnusedUsers(
+      [],
+      [
+        { id: "a", unwanted: ["b"], wanted: [], gender: "male" },
+        { id: "b", unwanted: [], wanted: [], gender: "female" },
+        { id: "c", unwanted: ["d"], wanted: [], gender: "male" },
+        { id: "d", unwanted: [], wanted: [], gender: "female" },
+      ]
+    )
+  ).toEqual([
+    { id: "a", unwanted: ["b"], wanted: [], gender: "male" },
+    { id: "b", unwanted: [], wanted: [], gender: "female" },
+    { id: "c", unwanted: ["d"], wanted: [], gender: "male" },
+    { id: "d", unwanted: [], wanted: [], gender: "female" },
   ])
 })
