@@ -151,6 +151,28 @@ test("Should get correct group set score", () => {
     )
   ).toBe(320)
   expect(getGroupSetScore(options, [{ id: "a", users: ["a"] }], [])).toBe(-5680)
+  expect(
+    getGroupSetScore(
+      options,
+      [
+        { id: "a", users: ["a", "b", "c"] },
+        { id: "b", users: ["n", "e", "d"] },
+        { id: "c", users: ["j", "m", "k"] },
+      ],
+      [{ id: "a", users: [] }]
+    )
+  ).toBe(-3800)
+  expect(
+    getGroupSetScore(
+      options,
+      [{ id: "a", users: [] }],
+      [
+        { id: "a", users: ["a", "b", "c"] },
+        { id: "b", users: ["n", "e", "d"] },
+        { id: "c", users: ["j", "m", "k"] },
+      ]
+    )
+  ).toBe(3800)
 })
 
 test("Should balance gender", () => {
