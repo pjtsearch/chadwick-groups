@@ -528,6 +528,12 @@ export const getGroupsIterations = (iterations: number, options: Options): Group
     (g) => g[0]
   )(range(0)(iterations))
 
+/**
+ * Gets the statistics for the users of a group set
+ * @param groups The groupSet to get stats from
+ * @param options The groups options
+ * @returns The statistics for the group set
+ */
 export const getStatistics = (groups: Group[], options: Options): Statistics => {
   return {
     unusedUsers: getUnusedUsers(groups, options.data).map(({ id }) => id),
