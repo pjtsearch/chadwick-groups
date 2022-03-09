@@ -198,6 +198,38 @@ test("Should compare groups by preference", () => {
       { id: "testGroup", users: ["a", "e", "d"] }
     )
   ).toBe(-1988)
+  expect(
+    compareGroupsByPreference(
+      { id: "test", wanted: [], unwanted: ["a", "b", "c", "d", "e", "f"], gender: "male" },
+      options,
+      { id: "testGroup", users: ["a", "b", "d"] },
+      { id: "testGroup", users: ["a", "e", "d"] }
+    )
+  ).toBe(0)
+  expect(
+    compareGroupsByPreference(
+      { id: "test", wanted: ["a", "b", "c", "d", "e", "f"], unwanted: [], gender: "male" },
+      options,
+      { id: "testGroup", users: ["a", "b", "d"] },
+      { id: "testGroup", users: ["a", "e", "d"] }
+    )
+  ).toBe(0)
+  expect(
+    compareGroupsByPreference(
+      { id: "test", wanted: [], unwanted: [], gender: "male" },
+      options,
+      { id: "testGroup", users: ["a", "b", "d"] },
+      { id: "testGroup", users: ["a", "e", "d"] }
+    )
+  ).toBe(0)
+  expect(
+    compareGroupsByPreference(
+      { id: "test", wanted: ["a"], unwanted: [], gender: "male" },
+      options,
+      { id: "testGroup", users: ["a", "b", "d"] },
+      { id: "testGroup", users: [] }
+    )
+  ).toBe(-18)
 })
 
 test("Should add unused users", () => {
