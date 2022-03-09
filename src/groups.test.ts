@@ -171,6 +171,12 @@ test("Should get if group wants user", () => {
   expect(getGroupLessWantedUser(options, "d", { id: "a", users: ["a", "b", "c"] })).toBe("a")
   expect(groupWantsUser(options, "e", { id: "a", users: ["a", "b", "c"] })).toBe(true)
   expect(getGroupLessWantedUser(options, "e", { id: "a", users: ["a", "b", "c"] })).toBe("a")
+  expect(groupWantsUser(options, "e", { id: "a", users: ["a", "b", "d"] })).toBe(true)
+  expect(getGroupLessWantedUser(options, "e", { id: "a", users: ["a", "b", "d"] })).toBe("a")
+  expect(groupWantsUser(options, "e", { id: "a", users: ["a", "b", "h"] })).toBe(true)
+  expect(getGroupLessWantedUser(options, "e", { id: "a", users: ["a", "b", "h"] })).toBe("a")
+  expect(groupWantsUser(options, "g", { id: "a", users: ["d", "l", "j"] })).toBe(false)
+  expect(getGroupLessWantedUser(options, "g", { id: "a", users: ["d", "l", "j"] })).toBeUndefined()
 })
 
 test("Should compare groups by preference", () => {
