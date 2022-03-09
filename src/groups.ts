@@ -73,6 +73,14 @@ export type Options = {
   data: UserData[]
 }
 
+type Statistics = {
+  unusedUsers: UserId[]
+  wantedAmount: number
+  unwantedAmount: number
+  avgWantedPerUser: number
+  usersWithNoWanted: number
+}
+
 /**
  * Gets an item in an array by id
  * @param items The items to find in
@@ -519,3 +527,13 @@ export const getGroupsIterations = (iterations: number, options: Options): Group
     sortGroupSets(options),
     (g) => g[0]
   )(range(0)(iterations))
+
+export const getStatistics = (groups: Group[], options: Options): Statistics => {
+  return {
+    unusedUsers: getUnusedUsers(groups, options.data).map(({ id }) => id),
+    unwantedAmount: getUnwantedAmount(options, groups),
+    wantedAmount: getWantedAmount(options, groups),
+    avgWantedPerUser: avgWithoutZero(wantedPerUser(options, groups)),
+    usersWithNoWanted: wantedPerUser(options, groups).filter((a) => a == 0).length,
+  }
+}

@@ -1,5 +1,6 @@
 export {
   getGroupsIterations as getGroups,
+  getStatistics,
   Gender,
   Group,
   GroupId,
