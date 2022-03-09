@@ -162,6 +162,18 @@ test("Should balance gender", () => {
     id: "a",
     users: ["a", "b"],
   })
+  expect(balanceGender(options, { id: "a", users: ["v", "b", "c", "d", "z"] }, "male")).toEqual({
+    id: "a",
+    users: ["v", "b", "d", "z"],
+  })
+  expect(balanceGender(options, { id: "a", users: ["v", "b", "c", "d", "z"] }, "female")).toEqual({
+    id: "a",
+    users: ["v", "b", "c", "d", "z"],
+  })
+  expect(balanceGender(options, { id: "a", users: [] }, "female")).toEqual({
+    id: "a",
+    users: [],
+  })
 })
 
 test("Should get if group wants user", () => {
