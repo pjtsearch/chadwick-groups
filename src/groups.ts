@@ -73,11 +73,29 @@ export type Options = {
   data: UserData[]
 }
 
+/**
+ * Statistics for a group set
+ */
 type Statistics = {
+  /**
+   * The users that are unused
+   */
   unusedUsers: UserId[]
+  /**
+   * The amount of users that are in the same group as another user that wants them
+   */
   wantedAmount: number
+  /**
+   * The amount of users that are in the same group as another user that doesn't want them
+   */
   unwantedAmount: number
+  /**
+   * The average amount of wanted users in the same group as the user that wants them
+   */
   avgWantedPerUser: number
+  /**
+   * The amount of users that have none of their wanted in their group
+   */
   usersWithNoWanted: number
 }
 
