@@ -175,7 +175,7 @@ export const getWantedAmount = curry(
 )
 
 /**
- * Gets how many users have people have at least one person they want in their group
+ * Gets how many users have people have at least one person they don't want in their group
  * @param options The groups options
  * @param groups The groups to look through
  * @returns The amount of users that have people have people they want in their group
