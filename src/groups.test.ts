@@ -1,7 +1,6 @@
 import { find, range } from "lodash/fp"
 
 import {
-  avgWithoutZero,
   balanceGender,
   compareGroupsByPreference,
   getGroupScore,
@@ -11,11 +10,11 @@ import {
   getGroupLessWantedUser,
   groupWantsUser,
   Options,
-  wantedPerUser,
   withUnusedUsers,
   getGroupSetScore,
   getUnusedUsers,
   getStatistics,
+  avgWithoutZero,
 } from "./groups"
 
 const options: Options = {
@@ -68,21 +67,14 @@ const options: Options = {
 
 test("Should have no unwanted", () => {
   range(0)(10).forEach(() => {
-    const unwanted = getGroupsIterations(100, options).flatMap((group) =>
-      group.users.filter((user) =>
-        group.users.some((otherUser) =>
-          find({ id: user }, options.data)!.unwanted.includes(otherUser)
-        )
-      )
-    )
-    expect(unwanted.length).toBe(0)
+    expect(getStatistics(getGroupsIterations(100, options), options).unwantedAmount).toBe(0)
   })
 })
 
 test("Should have enough wanted", () => {
   range(0)(10).forEach(() => {
-    const res = getGroupsIterations(30, options)
-    expect(getWantedAmount(options)(res)).toBeGreaterThanOrEqual(
+    const res = getGroupsIterations(100, options)
+    expect(getStatistics(res, options).wantedAmount).toBeGreaterThanOrEqual(
       res.flatMap(({ users }) => users).length / 1.3
     )
   })
@@ -90,18 +82,16 @@ test("Should have enough wanted", () => {
 
 test("Should have enough wanted per user", () => {
   range(0)(10).forEach(() => {
-    const wanted = wantedPerUser(options, getGroupsIterations(100, options))
-    const res = avgWithoutZero(wanted)
-    expect(res).toBeLessThanOrEqual(2)
-    expect(res).toBeGreaterThanOrEqual(0.9)
-    expect(wanted.filter((a) => a == 0).length).toBeLessThanOrEqual(2)
+    const res = getStatistics(getGroupsIterations(100, options), options)
+    expect(res.avgWantedPerUser).toBeLessThanOrEqual(2)
+    expect(res.avgWantedPerUser).toBeGreaterThanOrEqual(0.9)
+    expect(res.usersWithNoWanted).toBeLessThanOrEqual(2)
   })
 })
 
 test("Should have all users", () => {
   range(0)(10).forEach(() => {
-    const groupedUsers = getGroupsIterations(10, options).flatMap(({ users }) => users)
-    expect(groupedUsers.sort()).toEqual(options.data.map(({ id }) => id).sort())
+    expect(getStatistics(getGroupsIterations(10, options), options).unusedUsers.length).toBe(0)
   })
 })
 
@@ -113,7 +103,7 @@ test("Should have gender balance", () => {
     const difference = groupsGenders.map((group) =>
       Math.abs(options.groupSize / 2 - group.filter((g) => g == "male").length)
     )
-    const avgDiff = difference.reduce((total, curr) => total + curr, 0) / groupsGenders.length
+    const avgDiff = avgWithoutZero(difference)
     expect(avgDiff).toBeLessThanOrEqual(1)
   })
 })
